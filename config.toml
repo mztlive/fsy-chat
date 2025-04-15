@@ -1,0 +1,20 @@
+# 代理配置
+[agent]
+api_key = "sk-33e3643fd6db453c9015697413b44bae"
+preamble = "你是一个无所不知的助手"
+chat_model = "qwen-max"
+
+# 嵌入模型配置（可选）
+[embedding]
+api_key = "sk-33e3643fd6db453c9015697413b44bae"
+model = "text-embedding-v1"
+dimensions = 1536
+collection_name = "documents"
+qdrant_url = "http://localhost:6334"
+
+# 文档配置
+[document]
+# 文档类目配置
+[[document.categories]]
+name = "知识库"
+directory = "./docs"

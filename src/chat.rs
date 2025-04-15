@@ -9,6 +9,8 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use crate::agent::AgentConfig;
+use crate::agent::EmbeddingConfig;
+use crate::document_loader::DocumentManager;
 use crate::errors::AppResult;
 
 type ResponseStream = Pin<Box<dyn Stream<Item = Result<StreamingChoice, CompletionError>> + Send>>;
@@ -24,8 +26,13 @@ pub struct ChatSession {
 
 impl ChatSession {
     /// 创建一个新的聊天会话
-    pub async fn new(config: AgentConfig) -> AppResult<Self> {
-        let agent = crate::agent::initialize_agent(config, None, None).await?;
+    pub async fn new(
+        config: AgentConfig,
+        embedding_config: Option<EmbeddingConfig>,
+        document_manager: Option<DocumentManager>,
+    ) -> AppResult<Self> {
+        let agent =
+            crate::agent::initialize_agent(config, embedding_config, document_manager).await?;
 
         Ok(Self {
             agent,
@@ -180,22 +187,4 @@ pub mod cli {
             }
         }
     }
-}
-
-/// 创建默认配置的聊天会话的便捷函数
-pub async fn create_default_session() -> AppResult<ChatSession> {
-    let session = ChatSession::new(AgentConfig {
-        api_key: "sk-33e3643fd6db453c9015697413b44bae".to_string(),
-        preamble: "你是一个无所不知的助手".to_string(),
-        chat_model: "qwen-max".to_string(),
-    })
-    .await?;
-
-    Ok(session)
-}
-
-/// 为了兼容性保留的原始入口点
-pub async fn start_chat_session() {
-    let session = create_default_session().await.unwrap();
-    cli::start_cli_session(session).await;
 }

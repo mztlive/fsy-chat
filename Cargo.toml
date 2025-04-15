@@ -17,3 +17,4 @@ qdrant-client = "1.13.0"
 reqwest = "0.12.15"
 tracing = "0.1.41"
 toml = "0.8.20"
+clap = { version = "4.5.36", features = ["derive"] }
