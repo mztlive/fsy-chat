@@ -9,8 +9,10 @@ use axum::{
 };
 
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::convert::Infallible;
 use std::time::Duration;
+use uuid::Uuid;
 
 use crate::web::{
     app_state::AppState,
@@ -51,7 +53,8 @@ pub async fn post_message(
         .await
         .ok_or(WebError::SessionNotFound)?;
 
-    session.send_message(&request.message).await?;
+    let message_id = Uuid::new_v4().to_string();
+    session.send_message(&request.message, message_id).await?;
 
     Ok(ApiResponse::<()>::success(()))
 }
@@ -86,7 +89,13 @@ pub async fn chat_sse_handler(
             // 创建从接收端读取消息的Stream
             let stream = async_stream::stream! {
                 while let Ok(msg) = rx.recv().await {
-                    yield Ok::<_, Infallible>(Event::default().event("new-message").data(msg.message));
+                    // 将消息和ID一起发送
+                    let response = json!({
+                        "id": msg.message_id,
+                        "content": msg.message
+                    });
+
+                    yield Ok::<_, Infallible>(Event::default().event("new-message").data(response.to_string()));
                 }
             };
 

@@ -1,4 +1,5 @@
 import { createSignal, createEffect, onCleanup, createResource } from 'solid-js'
+import { createStore } from 'solid-js/store'
 import {
     createChatSession,
     sendChatMessage,
@@ -7,33 +8,60 @@ import {
     closeSSEConnection,
     getAllDocumentCategories,
 } from '~/api/chat'
+import { SSEMessage } from '~/api/types'
 import type { ChatSession, Message } from '~/types/chat'
 import { createMessage, createNewSession } from '~/utils/chatUtils'
 
 export const useChat = () => {
-    const [sessions, setSessions] = createSignal<ChatSession[]>([])
-    const [activeSessionId, setActiveSessionId] = createSignal<string | null>(null)
-
+    const [currentSession, setCurrentSession] = createSignal<ChatSession | null>(null)
     const [loading, setLoading] = createSignal(false)
     const [backendSessionId, setBackendSessionId] = createSignal<string | null>(null)
 
     const [eventSource, setEventSource] = createSignal<EventSource | null>(null)
     const [categories] = createResource(async () => {
         const response = await getAllDocumentCategories()
-        if (response.code === 0) {
+        if (response.status === 200) {
             return response.data
         }
         return []
     })
 
-    // 当前活跃会话
-    const activeSession = () => {
-        if (!activeSessionId()) return null
-        return sessions().find(s => s.id === activeSessionId()) || null
-    }
+    const [currentMessage, setCurrentMessage] = createStore<Message>({
+        id: '',
+        role: 'assistant',
+        content: '',
+        timestamp: 0,
+    })
 
     // 当前会话的消息
-    const activeMessages = () => activeSession()?.messages || []
+    const activeMessages = () => currentSession()?.messages || []
+
+    // 处理SSE消息
+    const handleSSEMessage = (message: SSEMessage) => {
+        // 获取消息ID
+        const messageId = message.id
+        if (currentMessage.id == messageId) {
+            setCurrentMessage('content', prev => prev + message.content)
+            return
+        }
+
+        setCurrentMessage({
+            id: messageId,
+            role: 'assistant',
+            content: message.content,
+            timestamp: Date.now(),
+        })
+
+        if (currentSession()) {
+            setCurrentSession({
+                ...currentSession()!,
+                messages: [...currentSession()!.messages, currentMessage],
+                updatedAt: Date.now(),
+            })
+        }
+
+        setLoading(false)
+    }
 
     // 建立SSE连接
     const setupSSEConnection = (sessionId: string) => {
@@ -46,25 +74,7 @@ export const useChat = () => {
         setEventSource(source)
 
         // 添加消息监听
-        addSSEMessageListener(source, messageText => {
-            // 处理收到的消息
-            const aiMessage = createMessage('assistant', messageText)
-
-            setSessions(prev => {
-                return prev.map(session => {
-                    if (session.id === activeSessionId()) {
-                        return {
-                            ...session,
-                            messages: [...session.messages, aiMessage],
-                            updatedAt: Date.now(),
-                        }
-                    }
-                    return session
-                })
-            })
-
-            setLoading(false)
-        })
+        addSSEMessageListener(source, handleSSEMessage)
 
         // 错误处理
         source.onerror = error => {
@@ -100,8 +110,7 @@ export const useChat = () => {
             // 将后端会话ID保存到前端会话的metadata中
             newSession.metadata = { backendSessionId: backendId }
 
-            setSessions([newSession, ...sessions()])
-            setActiveSessionId(newSession.id)
+            setCurrentSession(newSession)
 
             // 触发界面更新
             return newSession.id
@@ -109,44 +118,9 @@ export const useChat = () => {
         return null
     }
 
-    // 选择会话
-    const selectSession = async (sessionId: string) => {
-        const session = sessions().find(s => s.id === sessionId)
-
-        if (session) {
-            // 获取后端会话ID
-            const backendId = session.metadata?.backendSessionId
-
-            if (backendId) {
-                // 设置当前活跃的后端会话ID
-                setBackendSessionId(backendId)
-                // 建立SSE连接
-                setupSSEConnection(backendId)
-            } else {
-                // 如果没有后端会话ID，创建一个新的
-                const newBackendId = await createBackendSession()
-                if (newBackendId) {
-                    // 更新会话的metadata
-                    setSessions(prev =>
-                        prev.map(s =>
-                            s.id === sessionId
-                                ? {
-                                      ...s,
-                                      metadata: { ...s.metadata, backendSessionId: newBackendId },
-                                  }
-                                : s
-                        )
-                    )
-                }
-            }
-        }
-
-        setActiveSessionId(sessionId)
-    }
-
     // 发送消息
     const sendMessage = async (content: string) => {
-        if (!activeSessionId()) {
+        if (!currentSession()) {
             const newSessionId = await createSession()
             if (!newSessionId) return // 如果创建失败，直接返回
             // 等待状态更新后再继续
@@ -157,29 +131,23 @@ export const useChat = () => {
         const userMessage = createMessage('user', content)
 
         // 更新会话
-        setSessions(prev => {
-            return prev.map(session => {
-                if (session.id === activeSessionId()) {
-                    return {
-                        ...session,
-                        messages: [...session.messages, userMessage],
-                        title:
-                            session.messages.length === 0
-                                ? content.slice(0, 30) + (content.length > 30 ? '...' : '')
-                                : session.title,
-                        updatedAt: Date.now(),
-                    }
-                }
-                return session
+        if (currentSession()) {
+            setCurrentSession({
+                ...currentSession()!,
+                messages: [...currentSession()!.messages, userMessage],
+                title:
+                    currentSession()!.messages.length === 0
+                        ? content.slice(0, 30) + (content.length > 30 ? '...' : '')
+                        : currentSession()!.title,
+                updatedAt: Date.now(),
             })
-        })
+        }
 
         // 设置加载状态
         setLoading(true)
 
         // 获取当前会话的后端会话ID
-        const currentSession = sessions().find(s => s.id === activeSessionId())
-        const currentBackendId = currentSession?.metadata?.backendSessionId || backendSessionId()
+        const currentBackendId = currentSession()?.metadata?.backendSessionId || backendSessionId()
 
         if (!currentBackendId) {
             console.error('未找到有效的后端会话ID')
@@ -193,9 +161,12 @@ export const useChat = () => {
             const response = await sendChatMessage(currentBackendId, content)
 
             // 如果发送失败，显示错误信息
-            if (response.code !== 0) {
+            if (response.status !== 200) {
                 throw new Error(response.message || '发送消息失败')
             }
+
+            setCurrentMessage('content', '')
+            setCurrentMessage('id', '')
         } catch (error) {
             console.error('发送消息失败:', error)
             setLoading(false)
@@ -203,24 +174,14 @@ export const useChat = () => {
             // 添加错误消息
             const errorMessage = createMessage('system', '消息发送失败，请检查网络连接并重试。')
 
-            setSessions(prev => {
-                return prev.map(session => {
-                    if (session.id === activeSessionId()) {
-                        return {
-                            ...session,
-                            messages: [...session.messages, errorMessage],
-                            updatedAt: Date.now(),
-                        }
-                    }
-                    return session
+            if (currentSession()) {
+                setCurrentSession({
+                    ...currentSession()!,
+                    messages: [...currentSession()!.messages, errorMessage],
+                    updatedAt: Date.now(),
                 })
-            })
+            }
         }
-    }
-
-    // 保存/加载会话
-    const loadSessions = (loadedSessions: ChatSession[]) => {
-        setSessions(loadedSessions)
     }
 
     // 注册清理函数
@@ -228,19 +189,14 @@ export const useChat = () => {
 
     return {
         // 状态
-        sessions,
-        activeSessionId,
+        currentSession,
         loading,
         categories,
-        activeSession,
         activeMessages,
 
         // 方法
         createSession,
-        selectSession,
         sendMessage,
-        loadSessions,
-        setSessions,
-        setActiveSessionId,
+        setCurrentSession,
     }
 }

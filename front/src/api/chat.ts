@@ -1,5 +1,12 @@
 import { BASE_URL, get, post } from './request'
-import { ApiResponse, ChatRequest, ChatResponse, NewSSEQuery, NewSSEResponse } from './types'
+import {
+    ApiResponse,
+    ChatRequest,
+    ChatResponse,
+    NewSSEQuery,
+    NewSSEResponse,
+    SSEMessage,
+} from './types'
 
 // 创建聊天会话
 export function createChatSession(params?: NewSSEQuery): Promise<ApiResponse<NewSSEResponse>> {
@@ -22,12 +29,18 @@ export function createSSEConnection(sessionId: string): EventSource {
 }
 
 // SSE消息事件监听器类型
-export type SSEMessageListener = (message: string) => void
+export type SSEMessageListener = (message: SSEMessage) => void
 
 // 添加SSE消息监听
 export function addSSEMessageListener(source: EventSource, listener: SSEMessageListener): void {
     source.addEventListener('new-message', (event: MessageEvent) => {
-        listener(event.data)
+        try {
+            // 将接收到的JSON字符串解析为对象
+            const data = JSON.parse(event.data)
+            listener(data)
+        } catch (error) {
+            console.error('解析SSE消息失败:', error)
+        }
     })
 }
 

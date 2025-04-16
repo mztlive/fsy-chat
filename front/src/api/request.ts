@@ -65,7 +65,7 @@ export async function request<T = any>(
     } catch (error) {
         console.error('请求错误:', error)
         return {
-            code: -1,
+            status: -1,
             message: error instanceof Error ? error.message : '网络错误',
             data: null as unknown as T,
         }

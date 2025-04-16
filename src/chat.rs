@@ -8,6 +8,7 @@ use rig::streaming::{StreamingChat, StreamingChoice};
 use std::pin::Pin;
 use std::sync::Arc;
 use tokio::sync::{broadcast, mpsc};
+use uuid::Uuid;
 
 use crate::agent::AgentConfig;
 use crate::agent::EmbeddingConfig;
@@ -22,6 +23,7 @@ pub type ResponseCallback = Arc<dyn Fn(StreamingChoice) + Send + Sync>;
 #[derive(Debug, Clone)]
 pub struct SessionMessage {
     pub message: String,
+    pub message_id: String,
 }
 
 /// AI聊天会话
@@ -86,7 +88,7 @@ impl ChatSession {
     }
 
     /// 发送消息并使用回调处理响应
-    pub async fn send_message(&mut self, user_input: &str) -> AppResult<()> {
+    pub async fn send_message(&mut self, user_input: &str, message_id: String) -> AppResult<()> {
         let mut response = self
             .agent
             .stream_chat(user_input, self.history.clone())
@@ -105,6 +107,7 @@ impl ChatSession {
                         response_text.push_str(text);
                         self.session_tx.send(SessionMessage {
                             message: text.clone(),
+                            message_id: message_id.clone(),
                         })?;
                     }
                     _ => {}
@@ -178,7 +181,8 @@ pub mod cli {
         loop {
             let user_input = read_user_input();
 
-            session.send_message(&user_input).await.unwrap();
+            let message_id = Uuid::new_v4().to_string();
+            session.send_message(&user_input, message_id).await.unwrap();
         }
     }
 }
