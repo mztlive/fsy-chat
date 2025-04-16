@@ -95,8 +95,7 @@ pub async fn initialize_agent(
     // 初始化代理构建器
     let mut builder = client
         .agent(&agent_config.chat_model)
-        .preamble(&agent_config.preamble)
-        .tool(crate::tools::adder::Adder);
+        .preamble(&agent_config.preamble);
 
     // 如果提供了嵌入配置、文档管理器、Qdrant URL和类别名称，添加向量存储功能
     if let (Some(embed_config), Some(doc_manager), Some(qdrant_url), Some(category)) = (
@@ -109,12 +108,15 @@ pub async fn initialize_agent(
         let embedding = create_embedding_model(client.clone(), &embed_config).await;
 
         // 获取该类别的配置
-        let category_config = doc_manager.get_category_config(&category).ok_or_else(|| {
-            std::io::Error::new(
-                std::io::ErrorKind::NotFound,
-                format!("Category {} not found", category),
-            )
-        })?;
+        let category_config = doc_manager
+            .get_category_config(&category)
+            .await
+            .ok_or_else(|| {
+                std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    format!("Category {} not found", category),
+                )
+            })?;
 
         // 初始化向量存储
         let index = vector_store::initialize_vector_store(

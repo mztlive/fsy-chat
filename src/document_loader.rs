@@ -29,7 +29,7 @@ impl DocumentManager {
     ///
     /// * `category_config` - 类目配置
     /// * `directory` - 包含文档的目录路径
-    pub fn load_category<P: AsRef<Path>>(
+    pub async fn load_category<P: AsRef<Path>>(
         &mut self,
         category_config: CategoryConfig,
         directory: P,
@@ -39,11 +39,11 @@ impl DocumentManager {
 
         // 存储类目配置
         self.category_configs
-            .try_lock()
-            .unwrap()
+            .lock()
+            .await
             .insert(category.clone(), category_config);
 
-        FileLoader::with_glob(&glob_pattern)?
+        let chunks = FileLoader::with_glob(&glob_pattern)?
             .read()
             .into_iter()
             .filter_map(|result| {
@@ -61,11 +61,11 @@ impl DocumentManager {
                     .collect::<Vec<String>>();
                 chunks
             })
-            .collect::<Vec<_>>()
-            .into_iter()
-            .for_each(|chunk| {
-                self.add_document(category.clone(), chunk);
-            });
+            .collect::<Vec<_>>();
+
+        for chunk in chunks {
+            self.add_document(category.clone(), chunk).await;
+        }
 
         Ok(())
     }
@@ -81,6 +81,7 @@ impl DocumentManager {
     }
 
     /// 获取指定类目的所有文档
+    #[allow(dead_code)]
     pub async fn get_documents(&self, category: &str) -> Option<Vec<String>> {
         self.documents.lock().await.get(category).map(|v| v.clone())
     }
@@ -102,11 +103,7 @@ impl DocumentManager {
     }
 
     /// 获取类目配置
-    pub fn get_category_config(&self, category: &str) -> Option<CategoryConfig> {
-        self.category_configs
-            .try_lock()
-            .unwrap()
-            .get(category)
-            .cloned()
+    pub async fn get_category_config(&self, category: &str) -> Option<CategoryConfig> {
+        self.category_configs.lock().await.get(category).cloned()
     }
 }

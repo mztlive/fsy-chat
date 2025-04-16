@@ -35,7 +35,9 @@ async fn initialize_document_manager(config: &Config) -> AppResult<DocumentManag
     let mut manager = DocumentManager::new();
 
     for category in &config.document.categories {
-        manager.load_category(category.clone(), &category.directory)?;
+        manager
+            .load_category(category.clone(), &category.directory)
+            .await?;
     }
 
     Ok(manager)
@@ -63,7 +65,7 @@ async fn main() -> AppResult<()> {
         embedding_config,
         Some(doc_manager),
         Some(qdrant_url),
-        None,
+        Some("客服".to_string()),
     )
     .await?;
 

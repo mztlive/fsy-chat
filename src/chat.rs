@@ -169,7 +169,7 @@ pub mod cli {
                 }
 
                 // 检查类别是否存在
-                if doc_manager.get_category_config(category).is_none() {
+                if doc_manager.get_category_config(category).await.is_none() {
                     println!("类别'{}' 不存在。", category);
                     println!("可用类别: {:?}", doc_manager.get_categories().await);
                     return true;
