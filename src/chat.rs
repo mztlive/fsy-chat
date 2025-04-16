@@ -4,7 +4,7 @@ use rig::agent::Agent;
 use rig::completion::CompletionError;
 use rig::message::Message;
 use rig::providers::openai::CompletionModel;
-use rig::streaming::{StreamingChat, StreamingChoice, StreamingCompletionModel};
+use rig::streaming::{StreamingChat, StreamingChoice};
 use std::pin::Pin;
 use std::sync::Arc;
 

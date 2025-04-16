@@ -1,5 +1,4 @@
-use axum::{Router, routing::get};
-use std::sync::Arc;
+use axum::Router;
 
 use crate::web::{app_state::AppState, handlers::chat_handler::chat_routes};
 

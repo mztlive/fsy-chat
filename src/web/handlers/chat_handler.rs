@@ -5,28 +5,16 @@ use axum::{
         IntoResponse,
         sse::{Event, Sse},
     },
-    routing::{get, post},
+    routing::get,
 };
-use futures_util::FutureExt;
-use futures_util::stream::RepeatWith;
-use futures_util::stream::{self, Stream};
-use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, time::Duration};
-use std::{convert::Infallible, sync::Arc};
-use tokio::sync::{Mutex, mpsc};
-use tokio_stream::StreamExt;
-use tokio_stream::wrappers::ReceiverStream;
 
-use crate::{
-    agent::{AgentConfig, EmbeddingConfig},
-    chat::{ChatSession, ResponseCallback},
-    document_loader::DocumentManager,
-    errors::AppResult,
-    web::{
-        app_state::AppState,
-        errors::{ApiResponse, ApiResult, WebError},
-    },
-};
+use futures_util::stream::{self};
+use serde::{Deserialize, Serialize};
+use std::convert::Infallible;
+use std::time::Duration;
+use tokio_stream::StreamExt;
+
+use crate::web::{app_state::AppState, errors::ApiResult};
 
 // 请求体结构
 #[derive(Debug, Deserialize)]

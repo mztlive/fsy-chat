@@ -14,7 +14,6 @@ use crate::errors::AppResult;
 use clap::Parser;
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::sync::Arc;
 use web::AppState;
 
 /// FSY AI聊天应用程序
