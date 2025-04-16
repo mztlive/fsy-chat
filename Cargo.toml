@@ -19,3 +19,7 @@ tracing = "0.1.41"
 toml = "0.8.20"
 clap = { version = "4.5.36", features = ["derive"] }
 tokio-stream = "0.1.15"
+uuid = "1.16.0"
+async-stream = "0.3.6"
+tower = "0.5.2"
+tower-http = { version = "0.6.2", features = ["cors"] }

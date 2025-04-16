@@ -7,7 +7,7 @@ use rig::providers::openai::CompletionModel;
 use rig::streaming::{StreamingChat, StreamingChoice};
 use std::pin::Pin;
 use std::sync::Arc;
-use tokio::sync::mpsc;
+use tokio::sync::{broadcast, mpsc};
 
 use crate::agent::AgentConfig;
 use crate::agent::EmbeddingConfig;
@@ -19,6 +19,7 @@ type ResponseStream = Pin<Box<dyn Stream<Item = Result<StreamingChoice, Completi
 /// 表示处理流式响应的回调函数
 pub type ResponseCallback = Arc<dyn Fn(StreamingChoice) + Send + Sync>;
 
+#[derive(Debug, Clone)]
 pub struct SessionMessage {
     pub message: String,
 }
@@ -29,7 +30,7 @@ pub struct ChatSession {
     agent: Arc<Agent<CompletionModel>>,
     history: Vec<Message>,
     /// 会话消息发送器，用于向会话流发送用户查询
-    session_tx: mpsc::Sender<SessionMessage>,
+    session_tx: broadcast::Sender<SessionMessage>,
 }
 
 impl ChatSession {
@@ -40,7 +41,6 @@ impl ChatSession {
         document_manager: Option<DocumentManager>,
         qdrant_url: Option<String>,
         doc_category: Option<String>,
-        session_tx: mpsc::Sender<SessionMessage>,
     ) -> AppResult<Self> {
         let agent = crate::agent::initialize_agent(
             config,
@@ -51,10 +51,12 @@ impl ChatSession {
         )
         .await?;
 
+        let (session_tx, _) = broadcast::channel(100);
+
         Ok(Self {
             agent: Arc::new(agent),
             history: Vec::new(),
-            session_tx: session_tx,
+            session_tx,
         })
     }
 
@@ -78,6 +80,11 @@ impl ChatSession {
         self.history.push(message);
     }
 
+    /// 获取消息接收器
+    pub fn subscribe(&self) -> broadcast::Receiver<SessionMessage> {
+        self.session_tx.subscribe()
+    }
+
     /// 发送消息并使用回调处理响应
     pub async fn send_message(&mut self, user_input: &str) -> AppResult<()> {
         let mut response = self
@@ -96,11 +103,9 @@ impl ChatSession {
                 Ok(choice) => match &choice {
                     StreamingChoice::Message(text) => {
                         response_text.push_str(text);
-                        self.session_tx
-                            .send(SessionMessage {
-                                message: text.clone(),
-                            })
-                            .await?;
+                        self.session_tx.send(SessionMessage {
+                            message: text.clone(),
+                        })?;
                     }
                     _ => {}
                 },
@@ -151,25 +156,24 @@ pub mod cli {
     pub async fn start_cli_session(config: crate::config::Config, doc_manager: DocumentManager) {
         print_welcome_message();
 
-        let (session_tx, mut session_rx) = mpsc::channel::<SessionMessage>(100);
-
-        tokio::spawn(async move {
-            while let Some(message) = session_rx.recv().await {
-                print!("{}", message.message);
-                std::io::stdout().flush().unwrap();
-            }
-        });
-
         let mut session = ChatSession::new(
             config.agent,
             config.embedding,
             Some(doc_manager),
             Some(config.qdrant_url),
             None,
-            session_tx,
         )
         .await
         .unwrap();
+
+        let mut receiver = session.subscribe();
+
+        tokio::spawn(async move {
+            while let Ok(message) = receiver.recv().await {
+                print!("{}", message.message);
+                std::io::stdout().flush().unwrap();
+            }
+        });
 
         loop {
             let user_input = read_user_input();

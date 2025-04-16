@@ -106,4 +106,14 @@ impl DocumentManager {
     pub async fn get_category_config(&self, category: &str) -> Option<CategoryConfig> {
         self.category_configs.lock().await.get(category).cloned()
     }
+
+    /// 获取所有类目配置
+    pub async fn get_all_category_config(&self) -> Vec<CategoryConfig> {
+        self.category_configs
+            .lock()
+            .await
+            .values()
+            .cloned()
+            .collect()
+    }
 }

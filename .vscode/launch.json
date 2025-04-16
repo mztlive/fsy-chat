@@ -21,7 +21,9 @@
                 }
             },
             "args": [
-                "--config=config.toml"
+                "--config=config.toml",
+                "--mode=web",
+                "--port=3001"
             ],
             "cwd": "${workspaceFolder}"
         },

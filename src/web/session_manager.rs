@@ -37,17 +37,12 @@ impl ChatSessionManager {
     }
 
     // 获取或创建会话
-    pub async fn get_or_create_session(
+    pub async fn create_session(
         &self,
-        session_id: &str,
         category: Option<String>,
-        session_tx: mpsc::Sender<SessionMessage>,
-    ) -> std::result::Result<ChatSession, WebError> {
+    ) -> std::result::Result<(ChatSession, String), WebError> {
         let mut sessions = self.sessions.lock().await;
-
-        if let Some(session) = sessions.get(session_id) {
-            return Ok(session.clone());
-        }
+        let session_id = uuid::Uuid::new_v4().to_string();
 
         // 创建新会话
         let session = ChatSession::new(
@@ -56,12 +51,19 @@ impl ChatSessionManager {
             self.document_manager.clone(),
             self.qdrant_url.clone(),
             category,
-            session_tx,
         )
         .await?;
 
         sessions.insert(session_id.to_string(), session.clone());
 
-        Ok(session)
+        Ok((session, session_id))
+    }
+
+    pub async fn get_session(&self, session_id: &str) -> Option<ChatSession> {
+        let sessions = self.sessions.lock().await;
+
+        let session = sessions.get(session_id);
+
+        session.map(|s| s.clone())
     }
 }

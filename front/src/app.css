@@ -1,0 +1,117 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+@plugin "daisyui/theme" {
+  name: "mytheme";
+  default: true; /* set as default */
+  prefersdark: true; /* set as default dark mode (prefers-color-scheme:dark) */
+  color-scheme: light; /* color of browser-provided UI */
+
+  /* 以公司logo颜色#3E48FF为基础的协调主题 */
+  --color-base-100: oklch(98% 0.02 260); /* #fafbff - 非常浅的蓝白色背景 */
+  --color-base-200: oklch(95% 0.03 260); /* #f2f4fc - 淡蓝白色背景，略深 */
+  --color-base-300: oklch(92% 0.04 260); /* #eaedfa - 淡蓝色背景，再深一些 */
+  --color-base-content: oklch(20% 0.05 260); /* #1a1d33 - 深蓝灰色文字 */
+  
+  /* 主色调 - 公司logo颜色 */
+  --color-primary: oklch(62% 0.19 260); /* #3e48ff - 鲜艳的蓝紫色 */
+  --color-primary-content: oklch(98% 0.01 260); /* #fafbff - 在主色调上的文字，接近白色 */
+  
+  /* 辅助色调 - 使用相近色系 */
+  --color-secondary: oklch(75% 0.15 230); /* #7a9cf3 - 淡蓝色，较为柔和 */
+  --color-secondary-content: oklch(98% 0.01 230); /* #fafeff - 在辅助色上的文字，几乎是白色 */
+  
+  /* 强调色 - 使用互补色 */
+  --color-accent: oklch(70% 0.17 290); /* #bd6eff - 紫色，与主色调形成对比 */
+  --color-accent-content: oklch(98% 0.01 290); /* #fdfaff - 在强调色上的文字，接近白色 */
+  
+  /* 中性色 */
+  --color-neutral: oklch(50% 0.05 260); /* #474c75 - 中性蓝灰色 */
+  --color-neutral-content: oklch(98% 0.01 260); /* #fafbff - 在中性色上的文字，接近白色 */
+  
+  /* 功能色 */
+  --color-info: oklch(70% 0.15 240); /* #6b8ff8 - 信息蓝，偏淡 */
+  --color-info-content: oklch(98% 0.01 240); /* #fafbff - 在信息色上的文字，接近白色 */
+  --color-success: oklch(65% 0.20 150); /* #1fc378 - 成功绿色 */
+  --color-success-content: oklch(98% 0.01 150); /* #f9fefc - 在成功色上的文字，接近白色 */
+  --color-warning: oklch(80% 0.20 85); /* #f8ce4c - 警告黄色 */
+  --color-warning-content: oklch(20% 0.05 85); /* #2e2b1e - 在警告色上的文字，深褐色 */
+  --color-error: oklch(65% 0.25 30); /* #e64e45 - 错误红色 */
+  --color-error-content: oklch(98% 0.01 30); /* #fffbfa - 在错误色上的文字，接近白色 */
+
+  /* border radius */
+  --radius-selector: 1rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+
+  /* base sizes */
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+
+  /* border size */
+  --border: 1px;
+
+  /* effects */
+  --depth: 1;
+  --noise: 0;
+}
+
+/* 自定义组件样式 */
+.textarea-transition {
+  transition: height 0.2s ease-out;
+}
+
+/* GitHub Markdown CSS 自定义覆盖 */
+.markdown-body {
+  background-color: transparent !important;
+  font-size: 14px !important;
+  color: var(--color-base-content) !important;
+}
+
+/* 强制使用light主题 */
+.markdown-body {
+  --color-fg-default: var(--color-base-content) !important;
+  --color-canvas-default: transparent !important;
+  --color-canvas-subtle: var(--color-base-200) !important;
+  --color-border-default: var(--color-base-300) !important;
+  --color-border-muted: var(--color-base-300) !important;
+  --color-neutral-muted: var(--color-base-200) !important;
+  --color-accent-fg: var(--color-primary) !important;
+  --color-accent-emphasis: var(--color-primary) !important;
+  --color-attention-subtle: var(--color-warning) !important;
+  --color-danger-fg: var(--color-error) !important;
+}
+
+/* 调整 markdown-body 在聊天界面中的间距 */
+.markdown-body > *:first-child {
+  margin-top: 0 !important;
+}
+
+.markdown-body > *:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* 确保代码块不会溢出 */
+.markdown-body pre {
+  overflow-x: auto;
+}
+
+/* 链接颜色使用我们的主题色 */
+.markdown-body a {
+  color: var(--color-primary);
+}
+
+/* 调整引用块样式 */
+.markdown-body blockquote {
+  border-left-color: var(--color-secondary);
+}
+
+/* 代码块样式调整 */
+.markdown-body pre {
+  background-color: var(--color-base-200) !important;
+}
+
+.markdown-body code {
+  background-color: var(--color-base-200) !important;
+  color: var(--color-base-content) !important;
+}
