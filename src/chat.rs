@@ -7,6 +7,7 @@ use rig::providers::openai::CompletionModel;
 use rig::streaming::{StreamingChat, StreamingChoice};
 use std::pin::Pin;
 use std::sync::Arc;
+use tokio::sync::mpsc;
 
 use crate::agent::AgentConfig;
 use crate::agent::EmbeddingConfig;
@@ -18,11 +19,17 @@ type ResponseStream = Pin<Box<dyn Stream<Item = Result<StreamingChoice, Completi
 /// 表示处理流式响应的回调函数
 pub type ResponseCallback = Arc<dyn Fn(StreamingChoice) + Send + Sync>;
 
+pub struct SessionMessage {
+    pub message: String,
+}
+
 /// AI聊天会话
 #[derive(Clone)]
 pub struct ChatSession {
     agent: Arc<Agent<CompletionModel>>,
     history: Vec<Message>,
+    /// 会话消息发送器，用于向会话流发送用户查询
+    session_tx: mpsc::Sender<SessionMessage>,
 }
 
 impl ChatSession {
@@ -33,6 +40,7 @@ impl ChatSession {
         document_manager: Option<DocumentManager>,
         qdrant_url: Option<String>,
         doc_category: Option<String>,
+        session_tx: mpsc::Sender<SessionMessage>,
     ) -> AppResult<Self> {
         let agent = crate::agent::initialize_agent(
             config,
@@ -46,6 +54,7 @@ impl ChatSession {
         Ok(Self {
             agent: Arc::new(agent),
             history: Vec::new(),
+            session_tx: session_tx,
         })
     }
 
@@ -69,23 +78,13 @@ impl ChatSession {
         self.history.push(message);
     }
 
-    /// 发送用户消息并获取响应流
-    pub async fn send_message(&self, user_input: &str) -> AppResult<ResponseStream> {
-        let stream = self
+    /// 发送消息并使用回调处理响应
+    pub async fn send_message(&mut self, user_input: &str) -> AppResult<()> {
+        let mut response = self
             .agent
             .stream_chat(user_input, self.history.clone())
             .await?;
 
-        Ok(stream)
-    }
-
-    /// 发送消息并使用回调处理响应
-    pub async fn send_message_with_callback(
-        &mut self,
-        user_input: &str,
-        callback: ResponseCallback,
-    ) -> AppResult<()> {
-        let mut response = self.send_message(user_input).await?;
         let mut response_text = String::new();
 
         // 添加用户消息到历史
@@ -94,24 +93,24 @@ impl ChatSession {
         // 处理流式响应
         while let Some(chunk) = response.next().await {
             match chunk {
-                Ok(choice) => {
-                    match &choice {
-                        StreamingChoice::Message(text) => {
-                            response_text.push_str(text);
-                        }
-                        _ => {}
+                Ok(choice) => match &choice {
+                    StreamingChoice::Message(text) => {
+                        response_text.push_str(text);
+                        self.session_tx
+                            .send(SessionMessage {
+                                message: text.clone(),
+                            })
+                            .await?;
                     }
-
-                    // 调用回调函数
-                    callback(choice);
-                }
+                    _ => {}
+                },
                 Err(e) => return Err(AppError::CompletionError(e)),
             }
         }
 
         // 只有在成功收到响应后才添加到历史
         if !response_text.is_empty() {
-            self.history.push(Message::assistant(response_text));
+            self.history.push(Message::assistant(response_text.clone()));
         }
 
         Ok(())
@@ -134,7 +133,6 @@ pub mod cli {
 
     pub fn print_welcome_message() {
         println!("欢迎使用AI聊天程序！输入'exit'或'quit'退出程序。");
-        println!("使用'category <类别名称>'切换到特定类别的文档。");
     }
 
     pub fn read_user_input() -> String {
@@ -149,116 +147,34 @@ pub mod cli {
         user_input.trim().to_string()
     }
 
-    pub async fn handle_special_commands(
-        input: &str,
-        session: &mut ChatSession,
-        config: &crate::config::Config,
-        doc_manager: &DocumentManager,
-    ) -> bool {
-        match input.to_lowercase().as_str() {
-            "exit" | "quit" => {
-                println!("再见！");
-                return true;
-            }
-            "clear" | "清空" => {
-                session.clear_history();
-                println!("对话历史已清空。");
-                return true;
-            }
-            _ if input.starts_with("category ") => {
-                let category = input.trim_start_matches("category ").trim();
-                if category.is_empty() {
-                    println!("请指定类别名称。");
-                    return true;
-                }
+    /// 启动CLI聊天会话
+    pub async fn start_cli_session(config: crate::config::Config, doc_manager: DocumentManager) {
+        print_welcome_message();
 
-                // 检查类别是否存在
-                if doc_manager.get_category_config(category).await.is_none() {
-                    println!("类别'{}' 不存在。", category);
-                    println!("可用类别: {:?}", doc_manager.get_categories().await);
-                    return true;
-                }
+        let (session_tx, mut session_rx) = mpsc::channel::<SessionMessage>(100);
 
-                // 创建新的会话
-                match create_session_with_category(
-                    config.agent.clone(),
-                    config.embedding.clone(),
-                    doc_manager.clone(),
-                    config.qdrant_url.clone(),
-                    Some(category.to_string()),
-                )
-                .await
-                {
-                    Ok(new_session) => {
-                        *session = new_session;
-                        println!("已切换到类别: {}", category);
-                    }
-                    Err(e) => {
-                        println!("创建会话失败: {}", e);
-                    }
-                }
-                return true;
+        tokio::spawn(async move {
+            while let Some(message) = session_rx.recv().await {
+                print!("{}", message.message);
+                std::io::stdout().flush().unwrap();
             }
-            _ if input.is_empty() => return true,
-            _ => return false,
-        }
-    }
+        });
 
-    /// 创建带有指定文档类别的聊天会话
-    pub async fn create_session_with_category(
-        agent_config: crate::agent::AgentConfig,
-        embedding_config: Option<crate::agent::EmbeddingConfig>,
-        doc_manager: DocumentManager,
-        qdrant_url: String,
-        category: Option<String>,
-    ) -> AppResult<ChatSession> {
-        ChatSession::new(
-            agent_config,
-            embedding_config,
+        let mut session = ChatSession::new(
+            config.agent,
+            config.embedding,
             Some(doc_manager),
-            Some(qdrant_url),
-            category,
+            Some(config.qdrant_url),
+            None,
+            session_tx,
         )
         .await
-    }
-
-    /// 启动CLI聊天会话
-    pub async fn start_cli_session(
-        mut session: ChatSession,
-        config: crate::config::Config,
-        doc_manager: DocumentManager,
-    ) {
-        print_welcome_message();
+        .unwrap();
 
         loop {
             let user_input = read_user_input();
 
-            if handle_special_commands(&user_input, &mut session, &config, &doc_manager).await {
-                if user_input.to_lowercase() == "exit" || user_input.to_lowercase() == "quit" {
-                    break;
-                }
-                continue;
-            }
-
-            let callback = Arc::new(|choice: StreamingChoice| match choice {
-                StreamingChoice::Message(text) => {
-                    print!("{}", text);
-                    std::io::stdout().flush().unwrap();
-                }
-                StreamingChoice::ToolCall(name, id, args) => {
-                    println!("\n工具调用: {} (ID: {})", name, id);
-                    println!("参数: {}", args);
-                }
-                _ => {}
-            });
-
-            match session
-                .send_message_with_callback(&user_input, callback)
-                .await
-            {
-                Ok(_) => println!("\n"),
-                Err(e) => println!("错误: {}", e),
-            }
+            session.send_message(&user_input).await.unwrap();
         }
     }
 }

@@ -96,24 +96,7 @@ async fn main() -> AppResult<()> {
         }
         _ => {
             // CLI模式
-            let doc_manager_clone = doc_manager.clone();
-
-            // 初始化聊天会话
-            let embedding_config = config.embedding.clone();
-            let agent_config = config.agent.clone();
-            let qdrant_url = config.qdrant_url.clone();
-
-            let session = chat::ChatSession::new(
-                agent_config,
-                embedding_config,
-                Some(doc_manager),
-                Some(qdrant_url),
-                Some("客服".to_string()),
-            )
-            .await?;
-
-            // 启动聊天会话
-            chat::cli::start_cli_session(session, config, doc_manager_clone).await;
+            chat::cli::start_cli_session(config, doc_manager).await;
         }
     }
 

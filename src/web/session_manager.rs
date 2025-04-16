@@ -1,10 +1,10 @@
 use std::{collections::HashMap, sync::Arc};
 
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, mpsc};
 
 use crate::{
     agent::{AgentConfig, EmbeddingConfig},
-    chat::ChatSession,
+    chat::{ChatSession, SessionMessage},
     document_loader::DocumentManager,
 };
 
@@ -41,6 +41,7 @@ impl ChatSessionManager {
         &self,
         session_id: &str,
         category: Option<String>,
+        session_tx: mpsc::Sender<SessionMessage>,
     ) -> std::result::Result<ChatSession, WebError> {
         let mut sessions = self.sessions.lock().await;
 
@@ -55,6 +56,7 @@ impl ChatSessionManager {
             self.document_manager.clone(),
             self.qdrant_url.clone(),
             category,
+            session_tx,
         )
         .await?;
 

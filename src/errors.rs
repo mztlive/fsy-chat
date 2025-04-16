@@ -1,6 +1,8 @@
 use rig::{completion::CompletionError, loaders::file::FileLoaderError, tool::ToolError};
 use thiserror::Error;
 
+use crate::chat::SessionMessage;
+
 #[derive(Debug, Error)]
 pub enum AppError {
     #[error("CompletionError: {0}")]
@@ -29,6 +31,9 @@ pub enum AppError {
 
     #[error("DocumentLoaderError: {0}")]
     DocumentLoaderError(#[from] FileLoaderError),
+
+    #[error("SendError: {0}")]
+    SendError(#[from] tokio::sync::mpsc::error::SendError<SessionMessage>),
 }
 
 pub type AppResult<T> = Result<T, AppError>;
