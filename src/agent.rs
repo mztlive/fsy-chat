@@ -30,10 +30,6 @@ pub struct EmbeddingConfig {
     pub model: String,
     /// 嵌入向量的维度
     pub dimensions: usize,
-    /// 向量存储的集合名称
-    pub collection_name: String,
-    /// Qdrant向量数据库的URL
-    pub qdrant_url: String,
 }
 
 /// 创建OpenAI兼容的客户端
@@ -61,6 +57,9 @@ fn create_client(api_key: &str) -> openai::Client {
 /// # 参数
 /// * `agent_config` - 代理的基本配置
 /// * `embedding_config` - 可选的嵌入模型配置，如果提供则启用检索增强生成
+/// * `document_manager` - 可选的文档管理器，提供向量存储需要的文档
+/// * `qdrant_url` - Qdrant向量数据库的URL
+/// * `category_name` - 可选的文档类别名称，用于创建向量存储
 ///
 /// # 返回值
 /// 返回配置好的Agent实例，如果初始化过程中发生错误则返回错误
@@ -78,7 +77,7 @@ fn create_client(api_key: &str) -> openai::Client {
 ///     };
 ///     
 ///     // 不使用嵌入功能的代理
-///     let agent = agent::initialize_agent(config, None).await?;
+///     let agent = agent::initialize_agent(config, None, None, None, None).await?;
 ///     
 ///     Ok(())
 /// }
@@ -87,6 +86,8 @@ pub async fn initialize_agent(
     agent_config: AgentConfig,
     embedding_config: Option<EmbeddingConfig>,
     document_manager: Option<DocumentManager>,
+    qdrant_url: Option<String>,
+    category_name: Option<String>,
 ) -> AppResult<Agent<openai::CompletionModel>> {
     // 创建客户端
     let client = create_client(&agent_config.api_key);
@@ -97,17 +98,30 @@ pub async fn initialize_agent(
         .preamble(&agent_config.preamble)
         .tool(crate::tools::adder::Adder);
 
-    // 如果提供了嵌入配置，添加向量存储功能
-    if let (Some(embed_config), Some(doc_manager)) = (embedding_config, document_manager) {
+    // 如果提供了嵌入配置、文档管理器、Qdrant URL和类别名称，添加向量存储功能
+    if let (Some(embed_config), Some(doc_manager), Some(qdrant_url), Some(category)) = (
+        embedding_config,
+        document_manager,
+        qdrant_url,
+        category_name,
+    ) {
         // 创建嵌入模型
         let embedding = create_embedding_model(client.clone(), &embed_config).await;
+
+        // 获取该类别的配置
+        let category_config = doc_manager.get_category_config(&category).ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("Category {} not found", category),
+            )
+        })?;
 
         // 初始化向量存储
         let index = vector_store::initialize_vector_store(
             embedding.clone(),
             vector_store::VectorStoreConfig::new(
-                embed_config.collection_name.clone(),
-                embed_config.qdrant_url.clone(),
+                category_config.collection_name.clone(),
+                qdrant_url,
                 embed_config.dimensions as u64,
             ),
             doc_manager,

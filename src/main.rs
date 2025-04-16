@@ -10,7 +10,7 @@ mod vector_store;
 use crate::config::Config;
 use crate::document_loader::DocumentManager;
 use crate::errors::AppResult;
-use clap::{ArgAction, Parser};
+use clap::Parser;
 use std::path::PathBuf;
 
 /// FSY AI聊天应用程序
@@ -20,10 +20,6 @@ struct Args {
     /// 配置文件路径
     #[arg(short, long, default_value = "config.toml")]
     config: PathBuf,
-
-    /// 启用向量检索
-    #[arg(short, long, action = ArgAction::SetTrue)]
-    vector_search: bool,
 }
 
 /// 从文件加载配置
@@ -39,7 +35,7 @@ async fn initialize_document_manager(config: &Config) -> AppResult<DocumentManag
     let mut manager = DocumentManager::new();
 
     for category in &config.document.categories {
-        manager.load_category(category.name.clone(), &category.directory)?;
+        manager.load_category(category.clone(), &category.directory)?;
     }
 
     Ok(manager)
@@ -55,19 +51,24 @@ async fn main() -> AppResult<()> {
 
     // 初始化文档管理器
     let doc_manager = initialize_document_manager(&config).await?;
+    let doc_manager_clone = doc_manager.clone();
 
     // 初始化聊天会话
-    let embedding_config = if args.vector_search {
-        config.embedding.clone()
-    } else {
-        None
-    };
+    let embedding_config = config.embedding.clone();
     let agent_config = config.agent.clone();
+    let qdrant_url = config.qdrant_url.clone();
 
-    let session = chat::ChatSession::new(agent_config, embedding_config, Some(doc_manager)).await?;
+    let session = chat::ChatSession::new(
+        agent_config,
+        embedding_config,
+        Some(doc_manager),
+        Some(qdrant_url),
+        None,
+    )
+    .await?;
 
     // 启动聊天会话
-    chat::cli::start_cli_session(session).await;
+    chat::cli::start_cli_session(session, config, doc_manager_clone).await;
 
     Ok(())
 }

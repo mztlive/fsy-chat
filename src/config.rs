@@ -14,6 +14,8 @@ pub struct Config {
     pub embedding: Option<EmbeddingConfig>,
     /// 文档配置
     pub document: DocumentConfig,
+    /// Qdrant向量数据库URL
+    pub qdrant_url: String,
 }
 
 /// 文档配置结构体
@@ -21,7 +23,7 @@ pub struct Config {
 /// 包含文档管理器所需的配置信息
 #[derive(Debug, Clone, Deserialize)]
 pub struct DocumentConfig {
-    /// 文档目录映射，键为类目名称，值为目录路径
+    /// 文档类目配置
     pub categories: Vec<CategoryConfig>,
 }
 
@@ -32,4 +34,6 @@ pub struct CategoryConfig {
     pub name: String,
     /// 类目对应的文档目录
     pub directory: PathBuf,
+    /// 向量存储的集合名称
+    pub collection_name: String,
 }

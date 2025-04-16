@@ -30,9 +30,17 @@ impl ChatSession {
         config: AgentConfig,
         embedding_config: Option<EmbeddingConfig>,
         document_manager: Option<DocumentManager>,
+        qdrant_url: Option<String>,
+        doc_category: Option<String>,
     ) -> AppResult<Self> {
-        let agent =
-            crate::agent::initialize_agent(config, embedding_config, document_manager).await?;
+        let agent = crate::agent::initialize_agent(
+            config,
+            embedding_config,
+            document_manager,
+            qdrant_url,
+            doc_category,
+        )
+        .await?;
 
         Ok(Self {
             agent,
@@ -122,6 +130,7 @@ pub mod cli {
 
     pub fn print_welcome_message() {
         println!("欢迎使用AI聊天程序！输入'exit'或'quit'退出程序。");
+        println!("使用'category <类别名称>'切换到特定类别的文档。");
     }
 
     pub fn read_user_input() -> String {
@@ -136,7 +145,12 @@ pub mod cli {
         user_input.trim().to_string()
     }
 
-    pub fn handle_special_commands(input: &str, session: &mut ChatSession) -> bool {
+    pub async fn handle_special_commands(
+        input: &str,
+        session: &mut ChatSession,
+        config: &crate::config::Config,
+        doc_manager: &DocumentManager,
+    ) -> bool {
         match input.to_lowercase().as_str() {
             "exit" | "quit" => {
                 println!("再见！");
@@ -147,19 +161,75 @@ pub mod cli {
                 println!("对话历史已清空。");
                 return true;
             }
+            _ if input.starts_with("category ") => {
+                let category = input.trim_start_matches("category ").trim();
+                if category.is_empty() {
+                    println!("请指定类别名称。");
+                    return true;
+                }
+
+                // 检查类别是否存在
+                if doc_manager.get_category_config(category).is_none() {
+                    println!("类别'{}' 不存在。", category);
+                    println!("可用类别: {:?}", doc_manager.get_categories().await);
+                    return true;
+                }
+
+                // 创建新的会话
+                match create_session_with_category(
+                    config.agent.clone(),
+                    config.embedding.clone(),
+                    doc_manager.clone(),
+                    config.qdrant_url.clone(),
+                    Some(category.to_string()),
+                )
+                .await
+                {
+                    Ok(new_session) => {
+                        *session = new_session;
+                        println!("已切换到类别: {}", category);
+                    }
+                    Err(e) => {
+                        println!("创建会话失败: {}", e);
+                    }
+                }
+                return true;
+            }
             _ if input.is_empty() => return true,
             _ => return false,
         }
     }
 
+    /// 创建带有指定文档类别的聊天会话
+    pub async fn create_session_with_category(
+        agent_config: crate::agent::AgentConfig,
+        embedding_config: Option<crate::agent::EmbeddingConfig>,
+        doc_manager: DocumentManager,
+        qdrant_url: String,
+        category: Option<String>,
+    ) -> AppResult<ChatSession> {
+        ChatSession::new(
+            agent_config,
+            embedding_config,
+            Some(doc_manager),
+            Some(qdrant_url),
+            category,
+        )
+        .await
+    }
+
     /// 启动CLI聊天会话
-    pub async fn start_cli_session(mut session: ChatSession) {
+    pub async fn start_cli_session(
+        mut session: ChatSession,
+        config: crate::config::Config,
+        doc_manager: DocumentManager,
+    ) {
         print_welcome_message();
 
         loop {
             let user_input = read_user_input();
 
-            if handle_special_commands(&user_input, &mut session) {
+            if handle_special_commands(&user_input, &mut session, &config, &doc_manager).await {
                 if user_input.to_lowercase() == "exit" || user_input.to_lowercase() == "quit" {
                     break;
                 }

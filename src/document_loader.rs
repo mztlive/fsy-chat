@@ -4,6 +4,7 @@ use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+use crate::config::CategoryConfig;
 use crate::errors::AppResult;
 
 /// 文档管理器结构体，支持加载和按类目访问文档
@@ -11,6 +12,8 @@ use crate::errors::AppResult;
 pub struct DocumentManager {
     /// 按类目存储的文档集合
     documents: Arc<Mutex<HashMap<String, Vec<String>>>>,
+    /// 类目配置
+    category_configs: Arc<Mutex<HashMap<String, CategoryConfig>>>,
 }
 
 impl DocumentManager {
@@ -18,19 +21,27 @@ impl DocumentManager {
     pub fn new() -> Self {
         Self {
             documents: Arc::new(Mutex::new(HashMap::new())),
+            category_configs: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
     /// 加载指定类目的文档
     ///
-    /// * `category` - 类目名称
+    /// * `category_config` - 类目配置
     /// * `directory` - 包含文档的目录路径
     pub fn load_category<P: AsRef<Path>>(
         &mut self,
-        category: String,
+        category_config: CategoryConfig,
         directory: P,
     ) -> AppResult<()> {
+        let category = category_config.name.clone();
         let glob_pattern = format!("{}/*.csv", directory.as_ref().display());
+
+        // 存储类目配置
+        self.category_configs
+            .try_lock()
+            .unwrap()
+            .insert(category.clone(), category_config);
 
         FileLoader::with_glob(&glob_pattern)?
             .read()
@@ -88,5 +99,14 @@ impl DocumentManager {
             .flatten()
             .cloned()
             .collect()
+    }
+
+    /// 获取类目配置
+    pub fn get_category_config(&self, category: &str) -> Option<CategoryConfig> {
+        self.category_configs
+            .try_lock()
+            .unwrap()
+            .get(category)
+            .cloned()
     }
 }
