@@ -11,7 +11,7 @@ use std::sync::Arc;
 use crate::agent::AgentConfig;
 use crate::agent::EmbeddingConfig;
 use crate::document_loader::DocumentManager;
-use crate::errors::AppResult;
+use crate::errors::{AppError, AppResult};
 
 type ResponseStream = Pin<Box<dyn Stream<Item = Result<StreamingChoice, CompletionError>> + Send>>;
 
@@ -19,8 +19,9 @@ type ResponseStream = Pin<Box<dyn Stream<Item = Result<StreamingChoice, Completi
 pub type ResponseCallback = Arc<dyn Fn(StreamingChoice) + Send + Sync>;
 
 /// AI聊天会话
+#[derive(Clone)]
 pub struct ChatSession {
-    agent: Agent<CompletionModel>,
+    agent: Arc<Agent<CompletionModel>>,
     history: Vec<Message>,
 }
 
@@ -43,7 +44,7 @@ impl ChatSession {
         .await?;
 
         Ok(Self {
-            agent,
+            agent: Arc::new(agent),
             history: Vec::new(),
         })
     }
@@ -69,10 +70,13 @@ impl ChatSession {
     }
 
     /// 发送用户消息并获取响应流
-    pub async fn send_message(&self, user_input: &str) -> Result<ResponseStream, CompletionError> {
-        self.agent
+    pub async fn send_message(&self, user_input: &str) -> AppResult<ResponseStream> {
+        let stream = self
+            .agent
             .stream_chat(user_input, self.history.clone())
-            .await
+            .await?;
+
+        Ok(stream)
     }
 
     /// 发送消息并使用回调处理响应
@@ -80,7 +84,7 @@ impl ChatSession {
         &mut self,
         user_input: &str,
         callback: ResponseCallback,
-    ) -> Result<(), CompletionError> {
+    ) -> AppResult<()> {
         let mut response = self.send_message(user_input).await?;
         let mut response_text = String::new();
 
@@ -101,7 +105,7 @@ impl ChatSession {
                     // 调用回调函数
                     callback(choice);
                 }
-                Err(e) => return Err(e),
+                Err(e) => return Err(AppError::CompletionError(e)),
             }
         }
 
