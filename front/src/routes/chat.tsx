@@ -63,7 +63,7 @@ function ChatRoute() {
             </div>
 
             {/* 主要内容区域 */}
-            <div class="flex-1 flex flex-col relative h-screen overflow-hidden w-full">
+            <div class="flex-1 flex flex-col relative h-screen overflow-hidden w-full md:w-[calc(100%-16rem)]">
                 {/* 顶部栏 */}
                 <div class="h-14 border-b border-base-300/30 flex items-center px-4 gap-4">
                     {/* 移动端菜单按钮 */}
