@@ -14,12 +14,7 @@ pub struct AppState {
 impl AppState {
     pub fn new(config: Config, doc_manager: DocumentManager) -> Self {
         Self {
-            chat_session_manager: ChatSessionManager::new(
-                config.agent.clone(),
-                config.embedding.clone(),
-                Some(doc_manager.clone()),
-                Some(config.qdrant_url.clone()),
-            ),
+            chat_session_manager: ChatSessionManager::new(),
             config: Arc::new(config),
             doc_manager,
         }

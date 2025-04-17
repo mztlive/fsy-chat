@@ -63,9 +63,21 @@ pub async fn create_session(
     State(app_state): State<AppState>,
     Query(request): Query<NewSSEQuery>,
 ) -> ApiResult<NewSSEResponse> {
+    let agent_config = app_state.config.agent.clone();
+    let embedding_config = app_state.config.embedding.clone();
+    let document_manager = app_state.doc_manager.clone();
+    let qdrant_url = app_state.config.qdrant_url.clone();
+
     let (_, session_id) = app_state
         .chat_session_manager
-        .create_session(request.category)
+        .create_session(
+            "default".to_string(),
+            agent_config,
+            request.category,
+            embedding_config,
+            Some(document_manager),
+            Some(qdrant_url),
+        )
         .await?;
 
     Ok(ApiResponse::success(NewSSEResponse { session_id }))

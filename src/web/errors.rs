@@ -4,6 +4,8 @@ use thiserror::Error;
 
 use crate::errors::AppError;
 
+use super::session_manager::errors::SessionManagerError;
+
 #[derive(Debug, Error)]
 pub enum WebError {
     #[error("Session not found")]
@@ -19,6 +21,12 @@ pub enum WebError {
 
     #[error("Internal server error: {0}")]
     InternalServerError(#[from] AppError),
+
+    #[error("IO error: {0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("Session manager error: {0}")]
+    SessionManagerError(#[from] SessionManagerError),
 }
 
 impl WebError {
