@@ -38,3 +38,13 @@ export interface SessionHistory {
     session_id: string
     title: string
 }
+
+export interface MessageHistoryResponse {
+    role: 'user' | 'assistant'
+    content?: Array<{
+        type?: string
+        text: string
+    }>
+}
+
+export type MessageHistoryResponseList = ApiResponse<MessageHistoryResponse[]>

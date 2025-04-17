@@ -7,6 +7,7 @@ import {
     addSSEMessageListener,
     closeSSEConnection,
     getAllDocumentCategories,
+    getMessageHistory,
 } from '~/api/chat'
 import { SSEMessage } from '~/api/types'
 import type { ChatSession, Message } from '~/types/chat'
@@ -34,6 +35,21 @@ export const useChat = () => {
         )
     }
 
+    const loadMessageHistory = async () => {
+        const response = await getMessageHistory(sessionId())
+        response.data.forEach((message, index) => {
+            setMessages([
+                ...messages,
+                {
+                    id: index.toString(),
+                    role: message.role,
+                    content: message.content?.[0]?.text ?? '',
+                    timestamp: Date.now(),
+                },
+            ])
+        })
+    }
+
     // 处理SSE消息
     const handleSSEMessage = (message: SSEMessage) => {
         if (currentMessageId() == message.id) {
@@ -57,13 +73,13 @@ export const useChat = () => {
     }
 
     // 建立SSE连接
-    const connect = (sessionId: string) => {
+    const connect = (_sessionId: string) => {
         // 关闭之前的连接
         if (eventSource()) {
             closeSSEConnection(eventSource()!)
         }
 
-        const source = createSSEConnection(sessionId)
+        const source = createSSEConnection(_sessionId)
         setEventSource(source)
 
         // 添加消息监听
@@ -76,7 +92,8 @@ export const useChat = () => {
             setEventSource(null)
         }
 
-        setSessionId(sessionId)
+        setSessionId(_sessionId)
+        console.log('连接成功:', sessionId())
     }
 
     // 清理连接
@@ -122,5 +139,6 @@ export const useChat = () => {
         // 方法
         sendMessage,
         connect,
+        loadMessageHistory,
     }
 }

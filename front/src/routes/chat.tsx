@@ -1,5 +1,5 @@
-import { createFileRoute } from '@tanstack/solid-router'
-import { createEffect, createSignal, onMount } from 'solid-js'
+import { createFileRoute, useNavigate, useSearch } from '@tanstack/solid-router'
+import { createEffect, createMemo, createSignal, onMount } from 'solid-js'
 import { ChatInput } from '../components/ChatInput'
 import { ChatWindow } from '../components/ChatWindow'
 import { SessionList } from '../components/SessionList'
@@ -8,15 +8,23 @@ import { useChat } from '~/hooks/chat'
 import { useChatManager } from '~/hooks/chat_manager'
 
 export const Route = createFileRoute('/chat')({
+    validateSearch: search =>
+        search as {
+            session_id?: string
+        },
+
     component: ChatRoute,
 })
 
 function ChatRoute() {
     const [sidebarOpen, setSidebarOpen] = createSignal(false)
-    const [activeSessionId, setActiveSessionId] = createSignal<string | null>(null)
 
     const chat = useChat()
     const chatManager = useChatManager()
+    const searchParams = useSearch({ from: '/chat' })
+    const navigate = useNavigate({ from: '/chat' })
+
+    const activeSessionId = createMemo(() => searchParams().session_id)
 
     // 切换侧边栏
     const toggleSidebar = () => {
@@ -25,7 +33,20 @@ function ChatRoute() {
 
     // 加载会话数据和初始化
     onMount(async () => {
-        chat.connect(await chatManager.createSession())
+        console.log('onmont')
+        if (!activeSessionId()) {
+            navigate({ search: { session_id: await chatManager.createSession() }, replace: true })
+            return
+        }
+    })
+
+    // 监听会话ID变化并连接会话
+    createEffect(() => {
+        if (activeSessionId()) {
+            console.log('连接会话:', activeSessionId())
+            chat.connect(activeSessionId()!)
+            chat.loadMessageHistory()
+        }
     })
 
     // 处理创建新会话
@@ -38,7 +59,6 @@ function ChatRoute() {
     const handleSelectSession = async (sessionId: string) => {
         // 在移动端选择会话后关闭侧边栏
         setSidebarOpen(false)
-        setActiveSessionId(sessionId)
     }
 
     return (
@@ -58,7 +78,7 @@ function ChatRoute() {
             >
                 <SessionList
                     sessions={chatManager.sessionHistory()}
-                    activeSessionId={activeSessionId()}
+                    activeSessionId={activeSessionId() ?? null}
                     onSelectSession={handleSelectSession}
                     onCreateNewSession={handleCreateNewSession}
                     categories={[]}

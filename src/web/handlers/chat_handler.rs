@@ -8,8 +8,9 @@ use axum::{
     routing::{get, post},
 };
 
+use rig::message::Message;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use serde_json::{Value, json};
 use std::convert::Infallible;
 use std::time::Duration;
 use uuid::Uuid;
@@ -76,6 +77,19 @@ pub async fn session_history(State(app_state): State<AppState>) -> ApiResult<Vec
         .await;
 
     Ok(ApiResponse::success(session))
+}
+
+pub async fn message_history(
+    State(app_state): State<AppState>,
+    Path(session_id): Path<String>,
+) -> ApiResult<Vec<Message>> {
+    let session = app_state
+        .chat_session_manager
+        .get_session(&session_id)
+        .await
+        .ok_or(WebError::SessionNotFound)?;
+
+    Ok(ApiResponse::success(session.get_history().await))
 }
 
 pub async fn create_session(
@@ -157,4 +171,5 @@ pub fn chat_routes() -> Router<AppState> {
         .route("/chat/create", get(create_session))
         .route("/all/document/category", get(get_all_document_category))
         .route("/session/history", get(session_history))
+        .route("/message/history/{session_id}", get(message_history))
 }

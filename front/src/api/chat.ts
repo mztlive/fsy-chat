@@ -2,6 +2,7 @@ import { BASE_URL, get, post } from './request'
 import {
     ApiResponse,
     ChatRequest,
+    MessageHistoryResponse,
     NewSSEQuery,
     NewSSEResponse,
     SessionHistory,
@@ -52,4 +53,11 @@ export function closeSSEConnection(source: EventSource): void {
 // 获取会话历史
 export function getSessionHistory(): Promise<ApiResponse<SessionHistory[]>> {
     return get<SessionHistory[]>('/session/history')
+}
+
+// 获取会话消息历史
+export function getMessageHistory(
+    sessionId: string
+): Promise<ApiResponse<MessageHistoryResponse[]>> {
+    return get<MessageHistoryResponse[]>(`/message/history/${sessionId}`)
 }
