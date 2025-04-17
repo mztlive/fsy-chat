@@ -7,7 +7,7 @@ use rig::providers::openai::CompletionModel;
 use rig::streaming::{StreamingChat, StreamingChoice};
 use std::pin::Pin;
 use std::sync::Arc;
-use tokio::sync::{RwLock, broadcast, mpsc};
+use tokio::sync::{RwLock, broadcast};
 use uuid::Uuid;
 
 use crate::agent::AgentConfig;

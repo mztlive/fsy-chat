@@ -3,9 +3,9 @@ use std::time::Duration;
 use axum::BoxError;
 use axum::error_handling::HandleErrorLayer;
 use axum::http::header;
-use axum::http::{HeaderName, Method};
+use axum::http::Method;
 use axum::response::IntoResponse;
-use axum::{Router, extract::DefaultBodyLimit, http::StatusCode};
+use axum::{Router, extract::DefaultBodyLimit};
 use tower::{ServiceBuilder, timeout::TimeoutLayer};
 use tower_http::cors::CorsLayer;
 
