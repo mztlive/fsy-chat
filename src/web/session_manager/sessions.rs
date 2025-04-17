@@ -1,8 +1,16 @@
 use std::{collections::HashMap, ops::Deref, sync::Arc};
 
+use futures_util::future::join_all;
+use serde::Serialize;
 use tokio::sync::Mutex;
 
 use crate::chat::ChatSession;
+
+#[derive(Debug, Clone, Serialize)]
+pub struct SessionHistory {
+    pub session_id: String,
+    pub title: String,
+}
 
 /// 用户标识类型
 pub type UserID = String;
@@ -215,5 +223,30 @@ impl Sessions {
     /// * `Vec<UserID>` - 包含所有用户ID的集合
     pub async fn user_ids(&self) -> Vec<UserID> {
         self.grouped.lock().await.keys().cloned().collect()
+    }
+
+    pub async fn get_session_history(&self, user_id: &UserID) -> Vec<SessionHistory> {
+        let chat_sessions = self.grouped.lock().await.get(user_id).cloned();
+
+        match chat_sessions {
+            Some(sessions) => {
+                let futures = sessions
+                    .iter()
+                    .map(|(session_id, session)| {
+                        let session_id = session_id.clone();
+                        let session = session.clone();
+                        async move {
+                            SessionHistory {
+                                session_id,
+                                title: session.summary().await,
+                            }
+                        }
+                    })
+                    .collect::<Vec<_>>();
+
+                join_all(futures).await
+            }
+            None => Vec::new(),
+        }
     }
 }

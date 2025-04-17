@@ -1,7 +1,7 @@
 use futures_util::Stream;
 use futures_util::stream::StreamExt;
 use rig::agent::Agent;
-use rig::completion::CompletionError;
+use rig::completion::{Chat, Completion, CompletionError};
 use rig::message::Message;
 use rig::providers::openai::CompletionModel;
 use rig::streaming::{StreamingChat, StreamingChoice};
@@ -29,6 +29,7 @@ pub struct SessionMessage {
 /// AI聊天会话
 #[derive(Clone)]
 pub struct ChatSession {
+    summary: Arc<RwLock<String>>,
     agent: Arc<Agent<CompletionModel>>,
     history: Arc<RwLock<Vec<Message>>>,
     /// 会话消息发送器，用于向会话流发送用户查询
@@ -56,6 +57,7 @@ impl ChatSession {
         let (session_tx, _) = broadcast::channel(100);
 
         Ok(Self {
+            summary: Arc::new(RwLock::new(String::from("新会话"))),
             agent: Arc::new(agent),
             history: Arc::new(RwLock::new(Vec::new())),
             session_tx,
@@ -80,6 +82,25 @@ impl ChatSession {
     /// 添加消息到历史
     pub async fn add_to_history(&mut self, message: Message) {
         self.history.write().await.push(message);
+    }
+
+    /// 总结会话
+    pub async fn do_summary(&mut self) {
+        let history = self.get_history().await;
+        let summary = self
+            .agent
+            .chat(
+                "帮我总结这次聊天的内容为7个字，直接给我结果，不要多余的话，我只要7个字，一个字都不能超出",
+                history,
+            )
+            .await
+            .unwrap_or("无法总结的会话".to_string());
+
+        *self.summary.write().await = summary;
+    }
+
+    pub async fn summary(&self) -> String {
+        self.summary.read().await.clone()
     }
 
     /// 获取消息接收器

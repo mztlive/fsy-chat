@@ -1,5 +1,3 @@
-
-
 use crate::{
     agent::{AgentConfig, EmbeddingConfig},
     chat::ChatSession,

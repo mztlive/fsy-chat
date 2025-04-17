@@ -54,7 +54,7 @@ function ChatRoute() {
         `}
             >
                 <SessionList
-                    sessions={[]}
+                    sessions={chatManager.sessionHistory()}
                     activeSessionId={''}
                     onSelectSession={handleSelectSession}
                     onCreateNewSession={handleCreateNewSession}

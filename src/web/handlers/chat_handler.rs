@@ -14,9 +14,13 @@ use std::convert::Infallible;
 use std::time::Duration;
 use uuid::Uuid;
 
-use crate::web::{
-    app_state::AppState,
-    errors::{ApiResponse, ApiResult, WebError},
+use crate::{
+    chat::ChatSession,
+    web::{
+        app_state::AppState,
+        errors::{ApiResponse, ApiResult, WebError},
+        session_manager::SessionHistory,
+    },
 };
 
 // 请求体结构
@@ -56,7 +60,22 @@ pub async fn post_message(
     let message_id = Uuid::new_v4().to_string();
     session.send_message(&request.message, message_id).await?;
 
+    // 异步总结会话
+    tokio::spawn(async move {
+        session.do_summary().await;
+    });
+
     Ok(ApiResponse::<()>::success(()))
+}
+
+pub async fn session_history(State(app_state): State<AppState>) -> ApiResult<Vec<SessionHistory>> {
+    let session = app_state
+        .chat_session_manager
+        .sessions()
+        .get_session_history(&"default".to_string())
+        .await;
+
+    Ok(ApiResponse::success(session))
 }
 
 pub async fn create_session(
@@ -88,7 +107,6 @@ pub async fn chat_sse_handler(
     State(app_state): State<AppState>,
     Path(session_id): Path<String>,
 ) -> axum::response::Response<axum::body::Body> {
-    // 创建新会话，使用match或if let来处理错误
     let session = app_state
         .chat_session_manager
         .get_session(&session_id)
@@ -138,4 +156,5 @@ pub fn chat_routes() -> Router<AppState> {
         .route("/chat/message/{session_id}", post(post_message))
         .route("/chat/create", get(create_session))
         .route("/all/document/category", get(get_all_document_category))
+        .route("/session/history", get(session_history))
 }

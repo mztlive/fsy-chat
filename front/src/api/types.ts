@@ -33,3 +33,8 @@ export interface ApiResponse<T> {
 
 // 文档类别列表响应
 export type DocumentCategoryResponse = ApiResponse<string[]>
+
+export interface SessionHistory {
+    session_id: string
+    title: string
+}

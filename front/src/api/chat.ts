@@ -5,6 +5,7 @@ import {
     ChatResponse,
     NewSSEQuery,
     NewSSEResponse,
+    SessionHistory,
     SSEMessage,
 } from './types'
 
@@ -47,4 +48,9 @@ export function addSSEMessageListener(source: EventSource, listener: SSEMessageL
 // 关闭SSE连接
 export function closeSSEConnection(source: EventSource): void {
     source.close()
+}
+
+// 获取会话历史
+export function getSessionHistory(): Promise<ApiResponse<SessionHistory[]>> {
+    return get<SessionHistory[]>('/session/history')
 }
