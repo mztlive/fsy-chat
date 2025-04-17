@@ -93,6 +93,7 @@ export const useChat = () => {
         }
 
         setSessionId(_sessionId)
+        setMessages([])
         console.log('连接成功:', sessionId())
     }
 

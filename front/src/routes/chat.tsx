@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/solid-router'
-import { createEffect, createMemo, createSignal, onMount } from 'solid-js'
+import { createEffect, createMemo, createSignal, onMount, untrack } from 'solid-js'
 import { ChatInput } from '../components/ChatInput'
 import { ChatWindow } from '../components/ChatWindow'
 import { SessionList } from '../components/SessionList'
@@ -42,16 +42,20 @@ function ChatRoute() {
 
     // 监听会话ID变化并连接会话
     createEffect(() => {
-        if (activeSessionId()) {
-            console.log('连接会话:', activeSessionId())
-            chat.connect(activeSessionId()!)
-            chat.loadMessageHistory()
+        const sessionId = activeSessionId()
+        console.log('sessionId', sessionId)
+        if (sessionId) {
+            // 不知道为什么，不佳untrack会导致createEffect一直触发。可能是内部的响应式状态更新了，导致createEffect一直触发。
+            untrack(() => {
+                chat.connect(sessionId)
+                chat.loadMessageHistory()
+            })
         }
     })
 
     // 处理创建新会话
     const handleCreateNewSession = async (category?: string) => {
-        // 在移动端创建新会话后关闭侧边栏
+        navigate({ search: { session_id: await chatManager.createSession() } })
         setSidebarOpen(false)
     }
 
@@ -59,6 +63,7 @@ function ChatRoute() {
     const handleSelectSession = async (sessionId: string) => {
         // 在移动端选择会话后关闭侧边栏
         setSidebarOpen(false)
+        navigate({ search: { session_id: sessionId } })
     }
 
     return (

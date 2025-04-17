@@ -33,7 +33,6 @@ impl FileStorage {
             let mut file = File::create(user_dir.join(format!("{}.json", session_id))).await?;
 
             let history = session.get_history().await;
-            println!("history: {:?}", history);
             let history = serde_json::to_string(&history)?;
             file.write_all(history.as_bytes()).await?;
         }
