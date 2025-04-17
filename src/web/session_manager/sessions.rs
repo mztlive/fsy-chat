@@ -236,15 +236,20 @@ impl Sessions {
                         let session_id = session_id.clone();
                         let session = session.clone();
                         async move {
-                            SessionHistory {
-                                session_id,
-                                title: session.summary().await,
-                            }
+                            let title = session.summary().await;
+                            let last_message_time = session.last_message_at().await;
+                            (SessionHistory { session_id, title }, last_message_time)
                         }
                     })
                     .collect::<Vec<_>>();
 
-                join_all(futures).await
+                let mut results = join_all(futures).await;
+
+                // 按最后消息时间降序排序
+                results.sort_by(|(_, a_time), (_, b_time)| b_time.cmp(a_time));
+
+                // 只返回SessionHistory部分
+                results.into_iter().map(|(history, _)| history).collect()
             }
             None => Vec::new(),
         }

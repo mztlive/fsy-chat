@@ -3,6 +3,7 @@ import { ChatSession } from '../types/chat'
 import { SessionListItem } from './SessionListItem'
 import { PlusIcon } from './icons'
 import { SessionHistory } from '~/api/types'
+import { useChatManager } from '~/hooks/chat_manager'
 
 interface SessionListProps {
     sessions: SessionHistory[]

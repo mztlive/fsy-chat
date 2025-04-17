@@ -8,6 +8,7 @@ use rig::streaming::{StreamingChat, StreamingChoice};
 use std::pin::Pin;
 use std::sync::Arc;
 use tokio::sync::{RwLock, broadcast};
+use tokio::time::Instant;
 use uuid::Uuid;
 
 use crate::agent::AgentConfig;
@@ -32,6 +33,7 @@ pub struct ChatSession {
     summary: Arc<RwLock<String>>,
     agent: Arc<Agent<CompletionModel>>,
     history: Arc<RwLock<Vec<Message>>>,
+    last_message_at: Arc<RwLock<Option<Instant>>>,
     /// 会话消息发送器，用于向会话流发送用户查询
     session_tx: broadcast::Sender<SessionMessage>,
 }
@@ -60,6 +62,7 @@ impl ChatSession {
             summary: Arc::new(RwLock::new(String::from("新会话"))),
             agent: Arc::new(agent),
             history: Arc::new(RwLock::new(Vec::new())),
+            last_message_at: Arc::new(RwLock::new(None)),
             session_tx,
         })
     }
@@ -97,6 +100,10 @@ impl ChatSession {
             .unwrap_or("无法总结的会话".to_string());
 
         *self.summary.write().await = summary;
+    }
+
+    pub async fn last_message_at(&self) -> Instant {
+        self.last_message_at.read().await.unwrap_or(Instant::now())
     }
 
     pub async fn summary(&self) -> String {
@@ -145,7 +152,8 @@ impl ChatSession {
                 .push(Message::assistant(response_text.clone()));
         }
 
-        println!("self.history: {:?}", self.history);
+        // update last message at
+        *self.last_message_at.write().await = Some(Instant::now());
 
         Ok(())
     }

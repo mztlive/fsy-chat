@@ -3,8 +3,6 @@ import { createChatSession, getAllDocumentCategories, getSessionHistory } from '
 import { SessionHistory } from '~/api/types'
 
 export const useChatManager = () => {
-    let refreshTimer
-
     const categories = createResource(async () => {
         const response = await getAllDocumentCategories()
         if (response.status === 200) {
@@ -34,5 +32,6 @@ export const useChatManager = () => {
         categories,
         createSession,
         sessionHistory,
+        refetchSessionHistory,
     }
 }
