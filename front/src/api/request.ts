@@ -58,7 +58,12 @@ export async function request<T = any>(
         const responseData = await response.json()
 
         if (response.ok) {
-            return responseData as ApiResponse<T>
+            const data = responseData as ApiResponse<T>
+            if (data.status === 200) {
+                return data
+            } else {
+                throw new Error(data.message || '请求失败')
+            }
         } else {
             throw new Error(responseData.message || '请求失败')
         }

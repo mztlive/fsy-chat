@@ -3,9 +3,9 @@ import { createEffect, createSignal, onMount } from 'solid-js'
 import { ChatInput } from '../components/ChatInput'
 import { ChatWindow } from '../components/ChatWindow'
 import { SessionList } from '../components/SessionList'
-import { loadSessionsFromStorage, saveSessionsToStorage } from '../utils/chatUtils'
 import { MenuIcon, RefreshIcon, MoreIcon } from '../components/icons'
 import { useChat } from '~/hooks/chat'
+import { useChatManager } from '~/hooks/chat_manager'
 
 export const Route = createFileRoute('/chat')({
     component: ChatRoute,
@@ -14,6 +14,7 @@ export const Route = createFileRoute('/chat')({
 function ChatRoute() {
     const [sidebarOpen, setSidebarOpen] = createSignal(false)
     const chat = useChat()
+    const chatManager = useChatManager()
 
     // 切换侧边栏
     const toggleSidebar = () => {
@@ -22,12 +23,11 @@ function ChatRoute() {
 
     // 加载会话数据和初始化
     onMount(async () => {
-        await chat.createSession()
+        chat.connect(await chatManager.createSession())
     })
 
     // 处理创建新会话
     const handleCreateNewSession = async (category?: string) => {
-        await chat.createSession(category)
         // 在移动端创建新会话后关闭侧边栏
         setSidebarOpen(false)
     }
@@ -75,7 +75,7 @@ function ChatRoute() {
                     </button>
 
                     {/* 标题 */}
-                    <h1 class="text-xl font-medium">ChatGPT</h1>
+                    <h1 class="text-xl font-medium">Fsy-Chat</h1>
 
                     <div class="flex-1"></div>
 
@@ -91,7 +91,7 @@ function ChatRoute() {
                 </div>
 
                 {/* 聊天窗口 */}
-                <ChatWindow messages={chat.activeMessages()} loading={chat.loading()} />
+                <ChatWindow messages={chat.messages} loading={chat.loading()} />
 
                 {/* 聊天输入框 */}
                 <ChatInput onSendMessage={chat.sendMessage} disabled={chat.loading()} />
