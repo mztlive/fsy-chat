@@ -12,12 +12,6 @@ export const useChatManager = () => {
         return []
     })
 
-    // 创建新会话
-    const createSession = async (category?: string) => {
-        const response = await createChatSession({ category })
-        return response.data.session_id
-    }
-
     const [sessionHistory, { refetch: refetchSessionHistory }] = createResource(
         async () => {
             const response = await getSessionHistory()
@@ -27,6 +21,12 @@ export const useChatManager = () => {
             initialValue: [],
         }
     )
+
+    // 创建新会话
+    const createSession = async (category?: string) => {
+        const response = await createChatSession({ category })
+        return response.data.session_id
+    }
 
     return {
         categories,

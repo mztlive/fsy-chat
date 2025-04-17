@@ -13,6 +13,8 @@ export const Route = createFileRoute('/chat')({
 
 function ChatRoute() {
     const [sidebarOpen, setSidebarOpen] = createSignal(false)
+    const [activeSessionId, setActiveSessionId] = createSignal<string | null>(null)
+
     const chat = useChat()
     const chatManager = useChatManager()
 
@@ -36,6 +38,7 @@ function ChatRoute() {
     const handleSelectSession = async (sessionId: string) => {
         // 在移动端选择会话后关闭侧边栏
         setSidebarOpen(false)
+        setActiveSessionId(sessionId)
     }
 
     return (
@@ -55,7 +58,7 @@ function ChatRoute() {
             >
                 <SessionList
                     sessions={chatManager.sessionHistory()}
-                    activeSessionId={''}
+                    activeSessionId={activeSessionId()}
                     onSelectSession={handleSelectSession}
                     onCreateNewSession={handleCreateNewSession}
                     categories={[]}

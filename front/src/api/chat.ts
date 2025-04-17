@@ -2,7 +2,6 @@ import { BASE_URL, get, post } from './request'
 import {
     ApiResponse,
     ChatRequest,
-    ChatResponse,
     NewSSEQuery,
     NewSSEResponse,
     SessionHistory,

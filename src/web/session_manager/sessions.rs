@@ -6,6 +6,7 @@ use tokio::sync::Mutex;
 
 use crate::chat::ChatSession;
 
+/// 对前端友好的会话历史
 #[derive(Debug, Clone, Serialize)]
 pub struct SessionHistory {
     pub session_id: String,
@@ -225,6 +226,13 @@ impl Sessions {
         self.grouped.lock().await.keys().cloned().collect()
     }
 
+    /// 获取指定用户的会话历史
+    ///
+    /// # 参数
+    /// * `user_id` - 用户ID
+    ///
+    /// # 返回
+    /// * `Vec<SessionHistory>` - 包含所有会话历史的集合
     pub async fn get_session_history(&self, user_id: &UserID) -> Vec<SessionHistory> {
         let chat_sessions = self.grouped.lock().await.get(user_id).cloned();
 
