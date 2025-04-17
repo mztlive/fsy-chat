@@ -7,7 +7,7 @@ use rig::providers::openai::CompletionModel;
 use rig::streaming::{StreamingChat, StreamingChoice};
 use std::pin::Pin;
 use std::sync::Arc;
-use tokio::sync::{broadcast, mpsc};
+use tokio::sync::{RwLock, broadcast, mpsc};
 use uuid::Uuid;
 
 use crate::agent::AgentConfig;
@@ -30,7 +30,7 @@ pub struct SessionMessage {
 #[derive(Clone)]
 pub struct ChatSession {
     agent: Arc<Agent<CompletionModel>>,
-    history: Vec<Message>,
+    history: Arc<RwLock<Vec<Message>>>,
     /// 会话消息发送器，用于向会话流发送用户查询
     session_tx: broadcast::Sender<SessionMessage>,
 }
@@ -57,29 +57,29 @@ impl ChatSession {
 
         Ok(Self {
             agent: Arc::new(agent),
-            history: Vec::new(),
+            history: Arc::new(RwLock::new(Vec::new())),
             session_tx,
         })
     }
 
     /// 获取会话历史
-    pub fn get_history(&self) -> &Vec<Message> {
-        &self.history
+    pub async fn get_history(&self) -> Vec<Message> {
+        self.history.read().await.clone()
     }
 
     /// 清空会话历史
-    pub fn clear_history(&mut self) {
-        self.history.clear();
+    pub async fn clear_history(&mut self) {
+        self.history.write().await.clear();
     }
 
     /// 设置会话历史
-    pub fn set_history(&mut self, history: Vec<Message>) {
-        self.history = history;
+    pub async fn set_history(&mut self, history: Vec<Message>) {
+        self.history.write().await.clear();
     }
 
     /// 添加消息到历史
-    pub fn add_to_history(&mut self, message: Message) {
-        self.history.push(message);
+    pub async fn add_to_history(&mut self, message: Message) {
+        self.history.write().await.push(message);
     }
 
     /// 获取消息接收器
@@ -91,13 +91,13 @@ impl ChatSession {
     pub async fn send_message(&mut self, user_input: &str, message_id: String) -> AppResult<()> {
         let mut response = self
             .agent
-            .stream_chat(user_input, self.history.clone())
+            .stream_chat(user_input, self.history.read().await.clone())
             .await?;
 
         let mut response_text = String::new();
 
         // 添加用户消息到历史
-        self.history.push(Message::user(user_input));
+        self.history.write().await.push(Message::user(user_input));
 
         // 处理流式响应
         while let Some(chunk) = response.next().await {
@@ -118,8 +118,13 @@ impl ChatSession {
 
         // 只有在成功收到响应后才添加到历史
         if !response_text.is_empty() {
-            self.history.push(Message::assistant(response_text.clone()));
+            self.history
+                .write()
+                .await
+                .push(Message::assistant(response_text.clone()));
         }
+
+        println!("self.history: {:?}", self.history);
 
         Ok(())
     }

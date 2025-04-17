@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, ops::Deref, sync::Arc};
 
 use tokio::sync::Mutex;
 
@@ -74,6 +74,14 @@ impl ChatSessions {
     /// * `Vec<ChatSession>` - 包含所有会话的向量
     pub fn to_vec(&self) -> Vec<ChatSession> {
         self.inner.values().cloned().collect()
+    }
+}
+
+impl Deref for ChatSessions {
+    type Target = HashMap<String, ChatSession>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
     }
 }
 
@@ -155,8 +163,10 @@ impl Sessions {
     ) {
         let mut guard = self.grouped.lock().await;
         let sessions = guard.entry(user_id).or_insert(ChatSessions::new());
+        let session_id = session_id.into();
 
-        sessions.insert(session_id.into(), session);
+        sessions.insert(session_id.clone(), session.clone());
+        self.index.lock().await.insert(session_id, session);
     }
 
     /// 移除指定用户的特定会话

@@ -1,8 +1,12 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use tokio::fs::File;
+use tokio::io::AsyncWriteExt;
 
-use crate::web::session_manager::Sessions;
+use crate::{
+    chat::ChatSession,
+    web::session_manager::{ChatSessions, Sessions},
+};
 
 use super::storage::{Storage, StorageError};
 
@@ -14,6 +18,28 @@ impl FileStorage {
     pub fn new(path: String) -> Self {
         Self { base_path: path }
     }
+
+    async fn save_user_sessions(
+        &self,
+        sessions: &ChatSessions,
+        user_dir: &PathBuf,
+    ) -> Result<(), StorageError> {
+        let sessions = sessions
+            .iter()
+            .map(|(session_id, session)| (session_id, session))
+            .collect::<Vec<(&String, &ChatSession)>>();
+
+        for (session_id, session) in sessions {
+            let mut file = File::create(user_dir.join(format!("{}.json", session_id))).await?;
+
+            let history = session.get_history().await;
+            println!("history: {:?}", history);
+            let history = serde_json::to_string(&history)?;
+            file.write_all(history.as_bytes()).await?;
+        }
+
+        Ok(())
+    }
 }
 
 impl Storage for FileStorage {
@@ -22,26 +48,22 @@ impl Storage for FileStorage {
         let sessions_dir = Path::new(&self.base_path).join("sessions");
         tokio::fs::create_dir_all(&sessions_dir).await?;
 
-        let user_ids = sessions.user_ids().await;
+        for user_id in sessions.user_ids().await {
+            // 创建用户的目录
+            let user_dir = sessions_dir.clone().join(&user_id);
+            tokio::fs::create_dir_all(&user_dir).await?;
 
-        for user_id in user_ids {
-            // 创建文件，文件名是用户ID + .json
-            let file_path = sessions_dir.join(format!("{}.json", user_id));
-            if !file_path.exists() {
-                let mut file = File::create(file_path).await?;
-
-                match sessions.get_sessions(&user_id).await {
-                    Some(sessions) => {
-                        serde_json::to_writer(&mut file, &sessions).await?;
-                    }
-                    None => {
-                        continue;
-                    }
+            match sessions.get_sessions(&user_id).await {
+                Some(sessions) => {
+                    self.save_user_sessions(&sessions, &user_dir).await?;
+                }
+                None => {
+                    continue;
                 }
             }
         }
 
-        todo!()
+        Ok(())
     }
 
     async fn load(&self) -> Result<(), StorageError> {

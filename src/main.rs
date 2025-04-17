@@ -11,10 +11,12 @@ mod web;
 use crate::config::Config;
 use crate::document_loader::DocumentManager;
 use crate::errors::AppResult;
+use crate::web::storage::Storage;
 use clap::Parser;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use web::AppState;
+use web::file::FileStorage;
 
 /// FSY AI聊天应用程序
 #[derive(Parser, Debug)]
@@ -54,6 +56,22 @@ async fn initialize_document_manager(config: &Config) -> AppResult<DocumentManag
     Ok(manager)
 }
 
+async fn dump_chat_sessions(app_state: AppState) {
+    let sessions = app_state.chat_session_manager.sessions();
+    let file_storage = FileStorage::new("./".to_string());
+
+    // 创建一个无限循环，每5秒执行一次持久化操作
+    loop {
+        let _ = file_storage
+            .persistence(&sessions)
+            .await
+            .inspect_err(|e| println!("dump chat sessions error: {}", e));
+
+        // 等待5秒
+        tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+    }
+}
+
 /// 启动Web服务器
 async fn start_web_server(
     config: Config,
@@ -62,6 +80,11 @@ async fn start_web_server(
 ) -> AppResult<()> {
     // 初始化聊天会话管理器
     let app_state = AppState::new(config, doc_manager);
+    let app_state_clone = app_state.clone();
+
+    tokio::spawn(async move {
+        dump_chat_sessions(app_state_clone).await;
+    });
 
     // 创建路由
     let app = web::create_router(app_state);

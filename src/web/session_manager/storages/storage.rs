@@ -7,6 +7,9 @@ pub enum StorageError {
 
     #[error("Persistence error: {0}")]
     PersistenceError(String),
+
+    #[error("Serialize error: {0}")]
+    SerializeError(#[from] serde_json::Error),
 }
 
 pub trait Storage {

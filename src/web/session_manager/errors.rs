@@ -1,3 +1,5 @@
+use super::storages::storage::StorageError;
+
 #[derive(Debug, thiserror::Error)]
 pub enum SessionManagerError {
     #[error("IO error: {0}")]
@@ -8,4 +10,7 @@ pub enum SessionManagerError {
 
     #[error("Persistence error: {0}")]
     PersistenceError(String),
+
+    #[error("Storage error: {0}")]
+    StorageError(#[from] StorageError),
 }

@@ -22,25 +22,7 @@ function ChatRoute() {
 
     // 加载会话数据和初始化
     onMount(async () => {
-        // 加载保存的会话
-        const loadedSessions = loadSessionsFromStorage()
-        chat.loadSessions(loadedSessions)
-
-        // 如果有会话，选择最近的一个，否则创建新会话
-        if (loadedSessions.length > 0) {
-            const mostRecent = loadedSessions.sort((a, b) => b.updatedAt - a.updatedAt)[0]
-            await chat.selectSession(mostRecent.id)
-        } else {
-            await chat.createSession()
-        }
-    })
-
-    // 存储会话数据
-    createEffect(() => {
-        // 只有当sessions有值时才保存
-        if (chat.sessions().length > 0) {
-            saveSessionsToStorage(chat.sessions())
-        }
+        await chat.createSession()
     })
 
     // 处理创建新会话
@@ -52,7 +34,6 @@ function ChatRoute() {
 
     // 处理选择会话
     const handleSelectSession = async (sessionId: string) => {
-        await chat.selectSession(sessionId)
         // 在移动端选择会话后关闭侧边栏
         setSidebarOpen(false)
     }
@@ -73,11 +54,11 @@ function ChatRoute() {
         `}
             >
                 <SessionList
-                    sessions={chat.sessions()}
-                    activeSessionId={chat.activeSessionId()}
+                    sessions={[]}
+                    activeSessionId={''}
                     onSelectSession={handleSelectSession}
                     onCreateNewSession={handleCreateNewSession}
-                    categories={chat.categories()}
+                    categories={[]}
                 />
             </div>
 
