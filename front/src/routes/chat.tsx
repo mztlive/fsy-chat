@@ -28,6 +28,10 @@ function ChatRoute() {
 
     // 切换侧边栏
     const toggleSidebar = () => {
+        if (!sidebarOpen() == true) {
+            chatManager.refetchSessionHistory()
+        }
+
         setSidebarOpen(!sidebarOpen())
     }
 
