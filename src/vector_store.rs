@@ -6,7 +6,8 @@ use qdrant_client::Qdrant;
 use qdrant_client::qdrant::{
     CreateCollectionBuilder, Distance, QueryPointsBuilder, VectorParamsBuilder,
 };
-use rig::embeddings::{EmbeddingModel, EmbeddingsBuilder};
+use rig::OneOrMany;
+use rig::embeddings::{Embedding, EmbeddingModel, EmbeddingsBuilder};
 use rig::vector_store::VectorStoreIndex;
 use rig_qdrant::QdrantVectorStore;
 
@@ -96,15 +97,22 @@ pub async fn initialize_vector_store(
 
     // 创建嵌入构建器并添加文档
     let mut builder = EmbeddingsBuilder::new(model.clone());
+    let mut documents: Vec<(Document, OneOrMany<Embedding>)> = Vec::new();
+
     for (i, chunk) in docs.iter().enumerate() {
         builder = builder.document(Document {
             id: format!("doc_{}", i),
             message: chunk.to_string(),
         })?;
+
+        if i % 25 == 0 {
+            let embeddings = builder.build().await.unwrap();
+            documents.extend(embeddings.into_iter());
+            builder = EmbeddingsBuilder::new(model.clone());
+        }
     }
 
-    // 构建嵌入
-    let documents = builder.build().await.unwrap();
+    // let documents = builder.build().await.unwrap();
 
     // 创建Qdrant客户端
     let client = Qdrant::from_url(config.qdrant_url.as_str())

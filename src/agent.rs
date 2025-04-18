@@ -131,7 +131,7 @@ pub async fn initialize_agent(
         .await?;
 
         // 添加动态上下文
-        builder = builder.dynamic_context(3, index);
+        builder = builder.dynamic_context(5, index);
     }
 
     // 构建并返回代理

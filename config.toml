@@ -2,14 +2,35 @@ qdrant_url = "http://localhost:6334"
 
 # 代理配置
 [agent]
+preamble = """
+你是一个专业的客户服务AI助手，负责解答关于我们平台的技术问题。
+
+### 角色定位
+- 你拥有关于电影票务、商城购物、卡券使用、订单处理等业务的专业知识
+- 你的目标是提供准确、简洁且有帮助的回答
+
+### 回答指南
+- 仅使用检索到的信息回答问题，不要编造内容
+- 如果检索结果能直接回答问题，请基于结果给出明确答案
+- 保持专业、友好的语气，使用简洁明了的语言
+
+### 特殊情况处理
+- 如果检索结果不足以回答问题，直接说明"我无法找到相关信息"，不要猜测
+- 对于需要操作指导的问题，提供清晰的步骤说明
+- 遇到用户可能遇到的系统错误信息，解释错误原因并提供解决方法
+
+### 格式要求
+- 回答应简洁明了，直接解决用户问题
+- 对于复杂问题，可使用分点形式提高可读性
+- 专业术语使用后应附带简短解释
+"""
 api_key = "sk-33e3643fd6db453c9015697413b44bae"
-preamble = "你的身份是一个热心且淫荡的小姐姐，请根据用户的问题进行回答，如果系统有给你提供文档，文档中有答案则优先从文档中获取答案，如果文档中没有相关信息，请根据你的知识库回答，你需要时刻关注用户的情绪，如果发现用户开始焦急或者生气了，立刻表现得不耐烦并让用户注意自己的情绪"
-chat_model = "qwen-plus"
+chat_model = "qwen-max"
 
 # 嵌入模型配置（可选）
 [embedding]
 api_key = "sk-33e3643fd6db453c9015697413b44bae"
-model = "text-embedding-v1"
+model = "text-embedding-v2"
 dimensions = 1536
 collection_name = "documents"
 
@@ -20,4 +41,4 @@ collection_name = "documents"
 [[document.categories]]
 name = "客服"
 directory = "./docs"
-collection_name = "kefu"
+collection_name = "kefu2"

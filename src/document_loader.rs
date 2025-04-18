@@ -1,4 +1,6 @@
 use rig::loaders::FileLoader;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
@@ -6,6 +8,23 @@ use tokio::sync::Mutex;
 
 use crate::config::CategoryConfig;
 use crate::errors::AppResult;
+
+/// 文档结构体
+#[derive(Debug, Deserialize, Serialize)]
+pub struct JsonDocument {
+    /// 文档ID
+    pub id: String,
+    /// 部门
+    pub department: String,
+    /// 类别
+    pub category: String,
+    /// 问题
+    pub question: String,
+    /// 问题变体
+    pub question_variants: Vec<String>,
+    /// 答案
+    pub answer: String,
+}
 
 /// 文档管理器结构体，支持加载和按类目访问文档
 #[derive(Clone)]
@@ -35,7 +54,7 @@ impl DocumentManager {
         directory: P,
     ) -> AppResult<()> {
         let category = category_config.name.clone();
-        let glob_pattern = format!("{}/*.csv", directory.as_ref().display());
+        let glob_pattern = format!("{}/*.json", directory.as_ref().display());
 
         // 存储类目配置
         self.category_configs
@@ -55,11 +74,16 @@ impl DocumentManager {
                     .ok()
             })
             .flat_map(|content| {
-                let chunks = content
-                    .split("\n")
-                    .map(|chunk| chunk.to_string())
-                    .collect::<Vec<String>>();
+                // let chunks = content
+                //     .split("\n")
+                //     .map(|chunk| chunk.to_string())
+                //     .collect::<Vec<String>>();
+
+                let chunks = serde_json::from_str::<Vec<JsonDocument>>(&content).unwrap();
                 chunks
+                    .into_iter()
+                    .map(|chunk| serde_json::to_string(&chunk).unwrap())
+                    .collect::<Vec<String>>()
             })
             .collect::<Vec<_>>();
 
@@ -105,15 +129,5 @@ impl DocumentManager {
     /// 获取类目配置
     pub async fn get_category_config(&self, category: &str) -> Option<CategoryConfig> {
         self.category_configs.lock().await.get(category).cloned()
-    }
-
-    /// 获取所有类目配置
-    pub async fn get_all_category_config(&self) -> Vec<CategoryConfig> {
-        self.category_configs
-            .lock()
-            .await
-            .values()
-            .cloned()
-            .collect()
     }
 }
