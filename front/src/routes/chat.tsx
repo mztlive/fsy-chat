@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/solid-router'
-import { createEffect, createMemo, createSignal, onMount, untrack } from 'solid-js'
+import { createEffect, createMemo, createSignal, For, onMount, untrack } from 'solid-js'
 import { ChatInput } from '../components/ChatInput'
 import { ChatWindow } from '../components/ChatWindow'
 import { SessionList } from '../components/SessionList'
-import { MenuIcon, RefreshIcon, MoreIcon } from '../components/icons'
+import { MenuIcon, RefreshIcon, MoreIcon, PlusIcon } from '../components/icons'
 import { useChat } from '~/hooks/chat'
 import { useChatManager } from '~/hooks/chat_manager'
 
@@ -18,6 +18,7 @@ export const Route = createFileRoute('/chat')({
 
 function ChatRoute() {
     const [sidebarOpen, setSidebarOpen] = createSignal(false)
+    const [showCategories, setShowCategories] = createSignal(false)
 
     const chat = useChat()
     const chatManager = useChatManager()
@@ -47,7 +48,6 @@ function ChatRoute() {
     // 监听会话ID变化并连接会话
     createEffect(() => {
         const sessionId = activeSessionId()
-        console.log('sessionId', sessionId)
         if (sessionId) {
             // 不知道为什么，不佳untrack会导致createEffect一直触发。可能是内部的响应式状态更新了，导致createEffect一直触发。
             untrack(() => {
@@ -59,8 +59,18 @@ function ChatRoute() {
 
     // 处理创建新会话
     const handleCreateNewSession = async (category?: string) => {
-        navigate({ search: { session_id: await chatManager.createSession() } })
+        // navigate({ search: { session_id: await chatManager.createSession() } })
         setSidebarOpen(false)
+        setShowCategories(true)
+    }
+
+    const handleSelectCategory = async (category: string) => {
+        setShowCategories(false)
+        if (category === '不立人设') {
+            navigate({ search: { session_id: await chatManager.createSession() } })
+        } else {
+            navigate({ search: { session_id: await chatManager.createSession(category) } })
+        }
     }
 
     // 处理选择会话
@@ -120,6 +130,22 @@ function ChatRoute() {
                     <button class="btn btn-sm btn-square btn-ghost">
                         <MoreIcon />
                     </button>
+
+                    {/* 添加按钮 */}
+                    <details class="dropdown dropdown-end">
+                        <summary class="btn btn-sm btn-square btn-ghost">
+                            <PlusIcon />
+                        </summary>
+                        <ul class="menu dropdown-content bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm">
+                            <For each={chatManager.categories()}>
+                                {category => (
+                                    <li onClick={() => handleSelectCategory(category)}>
+                                        <a>{category}</a>
+                                    </li>
+                                )}
+                            </For>
+                        </ul>
+                    </details>
                 </div>
 
                 {/* 聊天窗口 */}
@@ -128,6 +154,30 @@ function ChatRoute() {
                 {/* 聊天输入框 */}
                 <ChatInput onSendMessage={chat.sendMessage} disabled={chat.loading()} />
             </div>
+
+            {/* 选择助手类型 */}
+            <dialog id="categories" class="modal" open={showCategories()}>
+                <div class="modal-box">
+                    <h3 class="text-lg font-bold">请选择助手类型</h3>
+                    <div class="flex flex-col gap-4 mt-4 max-w-md">
+                        <For each={chatManager.categories()}>
+                            {category => (
+                                <button
+                                    class="btn btn-outline w-full"
+                                    onClick={() => handleSelectCategory(category)}
+                                >
+                                    {category}
+                                </button>
+                            )}
+                        </For>
+                    </div>
+                    <div class="modal-action">
+                        <button class="btn" onClick={() => setShowCategories(false)}>
+                            关闭
+                        </button>
+                    </div>
+                </div>
+            </dialog>
         </div>
     )
 }

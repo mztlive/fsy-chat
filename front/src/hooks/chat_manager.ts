@@ -1,15 +1,20 @@
-import { createResource, onCleanup, onMount } from 'solid-js'
+import { createMemo, createResource, onCleanup, onMount } from 'solid-js'
 import { createChatSession, getAllDocumentCategories, getSessionHistory } from '~/api/chat'
 import { SessionHistory } from '~/api/types'
 
 export const useChatManager = () => {
-    const categories = createResource(async () => {
-        const response = await getAllDocumentCategories()
-        if (response.status === 200) {
+    const [remoteCategories] = createResource(
+        async () => {
+            const response = await getAllDocumentCategories()
             return response.data
+        },
+        {
+            initialValue: [],
         }
+    )
 
-        return []
+    const categories = createMemo(() => {
+        return ['不立人设', ...remoteCategories()]
     })
 
     const [sessionHistory, { refetch: refetchSessionHistory }] = createResource(
