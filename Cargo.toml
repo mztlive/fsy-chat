@@ -16,10 +16,11 @@ rig-qdrant = "0.1.11"
 qdrant-client = "1.13.0"
 reqwest = "0.12.15"
 tracing = "0.1.41"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 toml = "0.8.20"
 clap = { version = "4.5.36", features = ["derive"] }
 tokio-stream = "0.1.15"
 uuid = "1.16.0"
 async-stream = "0.3.6"
 tower = "0.5.2"
-tower-http = { version = "0.6.2", features = ["cors"] }
+tower-http = { version = "0.6.2", features = ["cors", "trace"] }

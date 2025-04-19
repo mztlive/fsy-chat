@@ -41,4 +41,4 @@ collection_name = "documents"
 [[document.categories]]
 name = "客服"
 directory = "./docs"
-collection_name = "kefu2"
+collection_name = "kefu3"

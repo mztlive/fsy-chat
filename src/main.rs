@@ -15,6 +15,8 @@ use crate::web::storage::Storage;
 use clap::Parser;
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use tracing::{Level, info};
+use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 use web::AppState;
 use web::file::FileStorage;
 
@@ -60,12 +62,15 @@ async fn dump_chat_sessions(app_state: AppState) {
     let sessions = app_state.chat_session_manager.sessions();
     let file_storage = FileStorage::new("./".to_string());
 
+    info!("启动聊天会话持久化任务");
     // 创建一个无限循环，每5秒执行一次持久化操作
     loop {
-        let _ = file_storage
-            .persistence(&sessions)
-            .await
-            .inspect_err(|e| println!("dump chat sessions error: {}", e));
+        info!("开始持久化聊天会话");
+        let result = file_storage.persistence(&sessions).await;
+        match result {
+            Ok(_) => info!("聊天会话持久化成功"),
+            Err(e) => tracing::error!("聊天会话持久化失败: {}", e),
+        }
 
         // 等待5秒
         tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
@@ -78,10 +83,12 @@ async fn start_web_server(
     doc_manager: DocumentManager,
     port: u16,
 ) -> AppResult<()> {
+    info!("初始化Web服务器");
     // 初始化聊天会话管理器
     let app_state = AppState::new(config, doc_manager);
     let app_state_clone = app_state.clone();
 
+    info!("启动聊天会话持久化后台任务");
     tokio::spawn(async move {
         dump_chat_sessions(app_state_clone).await;
     });
@@ -91,7 +98,7 @@ async fn start_web_server(
 
     // 绑定地址
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
-    println!("Web服务器已启动，监听地址: {}", addr);
+    info!("Web服务器已启动，监听地址: {}", addr);
 
     // 启动服务器
     axum::serve(tokio::net::TcpListener::bind(addr).await?, app)
@@ -103,22 +110,34 @@ async fn start_web_server(
 
 #[tokio::main]
 async fn main() -> AppResult<()> {
+    // 初始化tracing
+    tracing_subscriber::registry()
+        .with(fmt::layer().with_writer(std::io::stdout))
+        .with(EnvFilter::from_default_env().add_directive(Level::INFO.into()))
+        .init();
+
+    info!("应用程序启动");
+
     // 解析命令行参数
     let args = Args::parse();
 
     // 加载配置
     let config = load_config(&args.config)?;
+    info!("配置加载完成");
 
     // 初始化文档管理器
     let doc_manager = initialize_document_manager(&config).await?;
+    info!("文档管理器初始化完成");
 
     // 根据运行模式启动服务
     match args.mode.as_str() {
         "web" => {
+            info!("以Web模式启动服务");
             start_web_server(config, doc_manager, args.port).await?;
         }
         _ => {
             // CLI模式
+            info!("以CLI模式启动服务");
             chat::cli::start_cli_session(config, doc_manager).await;
         }
     }

@@ -2,18 +2,21 @@ use std::time::Duration;
 
 use axum::BoxError;
 use axum::error_handling::HandleErrorLayer;
-use axum::http::header;
 use axum::http::Method;
+use axum::http::header;
 use axum::response::IntoResponse;
 use axum::{Router, extract::DefaultBodyLimit};
 use tower::{ServiceBuilder, timeout::TimeoutLayer};
 use tower_http::cors::CorsLayer;
+use tower_http::trace::TraceLayer;
+use tracing::{Level, info};
 
 use crate::web::{app_state::AppState, handlers::chat_handler::chat_routes};
 
 use super::errors::ApiResponse;
 
 pub fn create_router(app_state: AppState) -> Router {
+    info!("创建Web路由");
     // 配置允许的源
     let origins = [
         "http://localhost:3000".parse().unwrap(),
@@ -46,4 +49,5 @@ pub fn create_router(app_state: AppState) -> Router {
                 ),
         )
         .layer(DefaultBodyLimit::max(300 * 1024 * 1024))
+        .layer(TraceLayer::new_for_http())
 }

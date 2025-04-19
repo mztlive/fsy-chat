@@ -10,6 +10,7 @@ use rig::OneOrMany;
 use rig::embeddings::{Embedding, EmbeddingModel, EmbeddingsBuilder};
 use rig::vector_store::VectorStoreIndex;
 use rig_qdrant::QdrantVectorStore;
+use tracing::info;
 
 /// 向量存储配置结构体
 ///
@@ -94,25 +95,25 @@ pub async fn initialize_vector_store(
 ) -> AppResult<impl VectorStoreIndex> {
     // 加载文档
     let docs = document_manager.get_all_documents().await;
-
-    // 创建嵌入构建器并添加文档
-    let mut builder = EmbeddingsBuilder::new(model.clone());
     let mut documents: Vec<(Document, OneOrMany<Embedding>)> = Vec::new();
 
-    for (i, chunk) in docs.iter().enumerate() {
-        builder = builder.document(Document {
-            id: format!("doc_{}", i),
-            message: chunk.to_string(),
-        })?;
+    // 将文档分成25个一组的块进行处理
+    for chunk in docs.chunks(25) {
+        // 创建嵌入构建器并添加文档
+        let mut builder = EmbeddingsBuilder::new(model.clone());
 
-        if i % 25 == 0 {
-            let embeddings = builder.build().await.unwrap();
-            documents.extend(embeddings.into_iter());
-            builder = EmbeddingsBuilder::new(model.clone());
+        for (i, doc) in chunk.iter().enumerate() {
+            let doc_str = doc.to_string();
+            info!("{}", doc_str);
+
+            builder = builder.document(Document {
+                id: format!("doc_{}", i),
+                message: doc_str,
+            })?;
         }
-    }
 
-    // let documents = builder.build().await.unwrap();
+        documents.extend(builder.build().await.unwrap());
+    }
 
     // 创建Qdrant客户端
     let client = Qdrant::from_url(config.qdrant_url.as_str())
