@@ -151,7 +151,20 @@ pub async fn chat_sse_handler(
                 )
                 .into_response()
         }
-        None => ApiResponse::<()>::bad_request("Session not found".to_string()).into_response(),
+        None => {
+            // 创建一个包含错误信息的流
+            let stream = async_stream::stream! {
+                let error_response = json!({
+                    "error": true,
+                    "message": "会话不存在",
+                    "code": "SESSION_NOT_FOUND"
+                });
+
+                yield Ok::<_, Infallible>(Event::default().event("error").data(error_response.to_string()));
+            };
+
+            Sse::new(stream).into_response()
+        }
     }
 }
 

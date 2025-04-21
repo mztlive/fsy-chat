@@ -1,9 +1,11 @@
-import { createSignal, createEffect, onMount } from 'solid-js'
+import { createSignal, createEffect, onMount, Show } from 'solid-js'
 import { PaperClipIcon, GlobeIcon, SparklesIcon, SendIcon } from './icons'
 
 interface ChatInputProps {
     onSendMessage: (message: string) => void
     disabled?: boolean
+    activeSessionId: string
+    onStartChat: () => void
 }
 
 // 定义常量
@@ -84,39 +86,49 @@ export function ChatInput(props: ChatInputProps) {
     return (
         <>
             <div class="w-full bg-gradient-to-t from-base-100 via-base-100 to-transparent pt-10">
-                <div class="max-w-3xl mx-auto px-4 pb-8 w-full">
-                    <form
-                        class="rounded border border-base-300 relative overflow-hidden flex items-center bg-base-100 w-full"
-                        onSubmit={handleSubmit}
-                    >
-                        <textarea
-                            ref={textareaRef}
-                            placeholder="询问任何问题"
-                            class={`textarea w-full border-none resize-none py-4 px-4 pr-4 focus:outline-none min-h-[${INITIAL_HEIGHT}px] max-h-[${MAX_HEIGHT}px] bg-transparent text-base-content textarea-transition`}
-                            value={inputValue()}
-                            onInput={handleInput}
-                            onKeyDown={handleKeyDown}
-                            disabled={props.disabled}
-                        />
-                        <div class="flex gap-1 px-2">
-                            <button
-                                type="button"
-                                class="btn btn-circle btn-sm btn-ghost"
-                                title="上传文件"
-                            >
-                                <PaperClipIcon />
-                            </button>
-                            <button
-                                class="btn btn-circle btn-sm btn-primary"
-                                type="submit"
-                                disabled={props.disabled || !inputValue().trim()}
-                                title="发送消息"
-                            >
-                                <SendIcon />
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                <Show when={props.activeSessionId}>
+                    <div class="max-w-3xl mx-auto px-4 pb-8 w-full">
+                        <form
+                            class="rounded border border-base-300 relative overflow-hidden flex items-center bg-base-100 w-full"
+                            onSubmit={handleSubmit}
+                        >
+                            <textarea
+                                ref={textareaRef}
+                                placeholder="询问任何问题"
+                                class={`textarea w-full border-none resize-none py-4 px-4 pr-4 focus:outline-none min-h-[${INITIAL_HEIGHT}px] max-h-[${MAX_HEIGHT}px] bg-transparent text-base-content textarea-transition`}
+                                value={inputValue()}
+                                onInput={handleInput}
+                                onKeyDown={handleKeyDown}
+                                disabled={props.disabled}
+                            />
+                            <div class="flex gap-1 px-2">
+                                <button
+                                    type="button"
+                                    class="btn btn-circle btn-sm btn-ghost"
+                                    title="上传文件"
+                                >
+                                    <PaperClipIcon />
+                                </button>
+                                <button
+                                    class="btn btn-circle btn-sm btn-primary"
+                                    type="submit"
+                                    disabled={props.disabled || !inputValue().trim()}
+                                    title="发送消息"
+                                >
+                                    <SendIcon />
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </Show>
+
+                <Show when={!props.activeSessionId}>
+                    <div class="max-w-3xl mx-auto px-4 pb-8 w-full">
+                        <button class="btn btn-primary w-full" onClick={() => props.onStartChat()}>
+                            开始聊天
+                        </button>
+                    </div>
+                </Show>
             </div>
         </>
     )

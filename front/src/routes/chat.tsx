@@ -32,19 +32,6 @@ function ChatRoute() {
         setSidebarOpen(!sidebarOpen())
     }
 
-    // 加载会话数据和初始化
-    onMount(async () => {
-        console.log('onmont')
-        if (!activeSessionId()) {
-            await chatManager.createSession.mutateAsync('不立人设')
-            navigate({
-                search: { session_id: chatManager.createSession.data },
-                replace: true,
-            })
-            return
-        }
-    })
-
     // 监听会话ID变化并连接会话
     createEffect(() => {
         const sessionId = activeSessionId()
@@ -147,13 +134,19 @@ function ChatRoute() {
                 {/* 聊天窗口 */}
                 <ChatWindow
                     messages={chat.messages}
-                    loading={chat.loading() || chatManager.createSession.isPending}
+                    waiting_reply={chat.loading() || chatManager.createSession.isPending}
+                    sseError={chat.sseError()}
+                    isCreatingSession={chatManager.createSession.isPending}
                 />
 
                 {/* 聊天输入框 */}
                 <ChatInput
                     onSendMessage={chat.sendMessage}
                     disabled={chat.loading() || chatManager.createSession.isPending}
+                    activeSessionId={activeSessionId() ?? ''}
+                    onStartChat={() => {
+                        setShowCategories(true)
+                    }}
                 />
             </div>
 

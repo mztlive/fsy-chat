@@ -45,6 +45,18 @@ export function addSSEMessageListener(source: EventSource, listener: SSEMessageL
     })
 }
 
+export function addSSEErrorListener(source: EventSource, listener: SSEMessageListener): void {
+    source.addEventListener('error', (event: MessageEvent) => {
+        try {
+            // 将接收到的JSON字符串解析为对象
+            const data = JSON.parse(event.data)
+            listener(data)
+        } catch (error) {
+            console.error('解析SSE消息失败:', error)
+        }
+    })
+}
+
 // 关闭SSE连接
 export function closeSSEConnection(source: EventSource): void {
     source.close()

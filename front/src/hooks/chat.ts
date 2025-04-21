@@ -8,6 +8,7 @@ import {
     closeSSEConnection,
     getAllDocumentCategories,
     getMessageHistory,
+    addSSEErrorListener,
 } from '~/api/chat'
 import { SSEMessage } from '~/api/types'
 import type { ChatSession, Message } from '~/types/chat'
@@ -19,6 +20,7 @@ export const useChat = () => {
     const [messages, setMessages] = createStore<Message[]>([])
     const [currentMessageId, setCurrentMessageId] = createSignal<string>('')
     const [sessionId, setSessionId] = createSignal<string>('')
+    const [sseError, setSseError] = createSignal<string>('')
 
     // 追加消息内容到指定下标
     const appendMessage = (index: number, message: SSEMessage) => {
@@ -72,35 +74,42 @@ export const useChat = () => {
         setLoading(false)
     }
 
+    const handleSSEError = (error: SSEMessage) => {
+        console.error('SSE连接错误:', error)
+        // setSseError(error)
+    }
+
     // 建立SSE连接
     const connect = (_sessionId: string) => {
         // 关闭之前的连接
         if (eventSource()) {
-            closeSSEConnection(eventSource()!)
+            const source = eventSource()
+            closeSSEConnection(source!)
         }
 
         const source = createSSEConnection(_sessionId)
         setEventSource(source)
-
-        // 添加消息监听
         addSSEMessageListener(source, handleSSEMessage)
 
         // 错误处理
-        source.onerror = error => {
-            console.error('SSE连接错误:', error)
+        source.onerror = (error: Event) => {
+            const data = JSON.parse((error as MessageEvent).data)
+            setSseError(data.message)
+
             source.close()
             setEventSource(null)
         }
 
         setSessionId(_sessionId)
         setMessages([])
-        console.log('连接成功:', sessionId())
+        setSseError('')
     }
 
     // 清理连接
     const cleanup = () => {
         if (eventSource()) {
-            closeSSEConnection(eventSource()!)
+            const source = eventSource()
+            closeSSEConnection(source!)
         }
     }
 
@@ -137,6 +146,8 @@ export const useChat = () => {
     return {
         loading,
         messages,
+        sseError,
+
         // 方法
         sendMessage,
         connect,

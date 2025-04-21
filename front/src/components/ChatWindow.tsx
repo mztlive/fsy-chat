@@ -5,7 +5,9 @@ import { DocumentIcon, PencilIcon, QuestionIcon, AlignIcon } from './icons'
 
 interface ChatWindowProps {
     messages: Message[]
-    loading?: boolean
+    waiting_reply?: boolean
+    sseError: string
+    isCreatingSession: boolean
 }
 
 export function ChatWindow(props: ChatWindowProps) {
@@ -18,7 +20,7 @@ export function ChatWindow(props: ChatWindowProps) {
 
     // 当消息列表变化或加载状态变化时，滚动到底部
     createEffect(() => {
-        if (props.messages.length || props.loading) {
+        if (props.messages.length || props.waiting_reply) {
             setTimeout(scrollToBottom, 100)
         }
     })
@@ -30,8 +32,33 @@ export function ChatWindow(props: ChatWindowProps) {
 
     return (
         <div class="flex-1 overflow-y-auto overflow-x-hidden">
+            <Show when={props.sseError}>
+                <div
+                    role="alert"
+                    class="alert alert-error max-w-3xl mx-auto mt-4 px-4 md:px-8 w-full"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-6 w-6 shrink-0 stroke-current"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                    >
+                        <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>{props.sseError}</span>
+                </div>
+            </Show>
+
+            <Show when={props.isCreatingSession}>
+                <div class="fixed inset-0 bg-base-100/50 backdrop-blur-sm z-10 flex items-center justify-center">
+                    <div role="alert" class="alert bg-base-100 shadow-lg max-w-md mx-auto">
+                        <span class="loading loading-spinner loading-md"></span>
+                        <span>正在创建会话...</span>
+                    </div>
+                </div>
+            </Show>
             <Show
-                when={props.messages.length > 0}
+                when={props.messages.length > 0 && !props.isCreatingSession}
                 fallback={
                     <div class="flex flex-col items-center justify-center h-full text-center p-4">
                         <div class="text-2xl font-medium mb-8">有什么可以帮忙的?</div>
@@ -78,15 +105,17 @@ export function ChatWindow(props: ChatWindowProps) {
                         )}
                     </For>
 
-                    <div id="loading" class="py-4 bg-base-100">
-                        <div class="max-w-3xl mx-auto px-4 md:px-8 w-full overflow-hidden">
-                            <div class="chat chat-start">
-                                <div class="chat-bubble bg-base-200 text-base-content">
-                                    <span class="loading loading-dots loading-md"></span>
+                    <Show when={props.waiting_reply}>
+                        <div id="loading" class="py-4 bg-base-100">
+                            <div class="max-w-3xl mx-auto px-4 md:px-8 w-full overflow-hidden">
+                                <div class="chat chat-start">
+                                    <div class="chat-bubble bg-base-200 text-base-content">
+                                        <span class="loading loading-dots loading-md"></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </Show>
 
                     <div ref={messagesEndRef}></div>
                 </div>

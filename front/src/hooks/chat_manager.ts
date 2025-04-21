@@ -4,7 +4,7 @@ import { createChatSession, getAllDocumentCategories, getSessionHistory } from '
 
 const NORMAL_REFETCH_INTERVAL = 10000
 
-const FILTER_CATEGORY = '不立人设'
+const FILTER_CATEGORY = 'DeepSeek'
 
 export const useChatManager = () => {
     const [remoteCategories] = createResource(
