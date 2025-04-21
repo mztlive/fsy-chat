@@ -1,4 +1,4 @@
-import { For } from 'solid-js'
+import { createEffect, For } from 'solid-js'
 import { ChatSession } from '../types/chat'
 import { SessionListItem } from './SessionListItem'
 import { PlusIcon } from './icons'
@@ -56,25 +56,12 @@ export function SessionList(props: SessionListProps) {
                     {session => (
                         <SessionListItem
                             session={session}
-                            isActive={session.session_id === props.activeSessionId}
+                            isActive={session.session_id == props.activeSessionId}
                             onClick={props.onSelectSession}
                             onDelete={props.onDeleteSession}
                         />
                     )}
                 </For>
-            </div>
-
-            <div class="mt-auto p-3 border-t border-base-300">
-                <div class="text-xs text-base-content/60 mb-2">
-                    © {new Date().getFullYear()} AI聊天助手
-                </div>
-                <a href="#" class="text-xs text-base-content/60 hover:text-primary">
-                    隐私政策
-                </a>
-                <span class="mx-1 text-xs text-base-content/60">·</span>
-                <a href="#" class="text-xs text-base-content/60 hover:text-primary">
-                    使用条款
-                </a>
             </div>
         </div>
     )

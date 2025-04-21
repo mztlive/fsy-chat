@@ -1,6 +1,10 @@
-import { createMemo, createResource, onCleanup, onMount } from 'solid-js'
+import { useMutation, useQuery } from '@tanstack/solid-query'
+import { createMemo, createResource } from 'solid-js'
 import { createChatSession, getAllDocumentCategories, getSessionHistory } from '~/api/chat'
-import { SessionHistory } from '~/api/types'
+
+const NORMAL_REFETCH_INTERVAL = 10000
+
+const FILTER_CATEGORY = '不立人设'
 
 export const useChatManager = () => {
     const [remoteCategories] = createResource(
@@ -14,29 +18,33 @@ export const useChatManager = () => {
     )
 
     const categories = createMemo(() => {
-        return ['不立人设', ...remoteCategories()]
+        return [FILTER_CATEGORY, ...remoteCategories()]
     })
 
-    const [sessionHistory, { refetch: refetchSessionHistory }] = createResource(
-        async () => {
+    const sessionHistory = useQuery(() => ({
+        queryKey: ['sessionHistory'],
+        queryFn: async () => {
             const response = await getSessionHistory()
             return response.data
         },
-        {
-            initialValue: [],
-        }
-    )
+        refetchInterval: NORMAL_REFETCH_INTERVAL,
+        refetchIntervalInBackground: true,
+        initialData: [],
+    }))
 
-    // 创建新会话
-    const createSession = async (category?: string) => {
-        const response = await createChatSession({ category })
-        return response.data.session_id
-    }
+    const createSession = useMutation(() => ({
+        mutationFn: async (category?: string) => {
+            if (category === FILTER_CATEGORY) {
+                return (await createChatSession({})).data.session_id
+            }
+
+            return (await createChatSession({ category })).data.session_id
+        },
+    }))
 
     return {
         categories,
         createSession,
         sessionHistory,
-        refetchSessionHistory,
     }
 }

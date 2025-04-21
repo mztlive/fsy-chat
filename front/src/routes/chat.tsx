@@ -29,10 +29,6 @@ function ChatRoute() {
 
     // 切换侧边栏
     const toggleSidebar = () => {
-        if (!sidebarOpen() == true) {
-            chatManager.refetchSessionHistory()
-        }
-
         setSidebarOpen(!sidebarOpen())
     }
 
@@ -40,7 +36,11 @@ function ChatRoute() {
     onMount(async () => {
         console.log('onmont')
         if (!activeSessionId()) {
-            navigate({ search: { session_id: await chatManager.createSession() }, replace: true })
+            await chatManager.createSession.mutateAsync('不立人设')
+            navigate({
+                search: { session_id: chatManager.createSession.data },
+                replace: true,
+            })
             return
         }
     })
@@ -59,18 +59,14 @@ function ChatRoute() {
 
     // 处理创建新会话
     const handleCreateNewSession = async (category?: string) => {
-        // navigate({ search: { session_id: await chatManager.createSession() } })
         setSidebarOpen(false)
         setShowCategories(true)
     }
 
     const handleSelectCategory = async (category: string) => {
         setShowCategories(false)
-        if (category === '不立人设') {
-            navigate({ search: { session_id: await chatManager.createSession() } })
-        } else {
-            navigate({ search: { session_id: await chatManager.createSession(category) } })
-        }
+        await chatManager.createSession.mutateAsync(category)
+        navigate({ search: { session_id: chatManager.createSession.data } })
     }
 
     // 处理选择会话
@@ -96,7 +92,7 @@ function ChatRoute() {
         `}
             >
                 <SessionList
-                    sessions={chatManager.sessionHistory()}
+                    sessions={chatManager.sessionHistory.data}
                     activeSessionId={activeSessionId() ?? null}
                     onSelectSession={handleSelectSession}
                     onCreateNewSession={handleCreateNewSession}
@@ -149,10 +145,16 @@ function ChatRoute() {
                 </div>
 
                 {/* 聊天窗口 */}
-                <ChatWindow messages={chat.messages} loading={chat.loading()} />
+                <ChatWindow
+                    messages={chat.messages}
+                    loading={chat.loading() || chatManager.createSession.isPending}
+                />
 
                 {/* 聊天输入框 */}
-                <ChatInput onSendMessage={chat.sendMessage} disabled={chat.loading()} />
+                <ChatInput
+                    onSendMessage={chat.sendMessage}
+                    disabled={chat.loading() || chatManager.createSession.isPending}
+                />
             </div>
 
             {/* 选择助手类型 */}
