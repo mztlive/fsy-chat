@@ -105,30 +105,14 @@ function ChatRoute() {
                     <div class="flex-1"></div>
 
                     {/* 刷新按钮 */}
-                    <button class="btn btn-sm btn-square btn-ghost">
+                    <button
+                        class="btn btn-sm btn-square btn-ghost"
+                        onClick={() => {
+                            window.location.reload()
+                        }}
+                    >
                         <RefreshIcon />
                     </button>
-
-                    {/* 更多按钮 */}
-                    <button class="btn btn-sm btn-square btn-ghost">
-                        <MoreIcon />
-                    </button>
-
-                    {/* 添加按钮 */}
-                    <details class="dropdown dropdown-end">
-                        <summary class="btn btn-sm btn-square btn-ghost">
-                            <PlusIcon />
-                        </summary>
-                        <ul class="menu dropdown-content bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm">
-                            <For each={chatManager.categories()}>
-                                {category => (
-                                    <li onClick={() => handleSelectCategory(category)}>
-                                        <a>{category}</a>
-                                    </li>
-                                )}
-                            </For>
-                        </ul>
-                    </details>
                 </div>
 
                 {/* 聊天窗口 */}

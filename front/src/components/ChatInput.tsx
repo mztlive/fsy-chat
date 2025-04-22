@@ -102,13 +102,13 @@ export function ChatInput(props: ChatInputProps) {
                                 disabled={props.disabled}
                             />
                             <div class="flex gap-1 px-2">
-                                <button
+                                {/* <button
                                     type="button"
                                     class="btn btn-circle btn-sm btn-ghost"
                                     title="上传文件"
                                 >
                                     <PaperClipIcon />
-                                </button>
+                                </button> */}
                                 <button
                                     class="btn btn-circle btn-sm btn-primary"
                                     type="submit"
