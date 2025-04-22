@@ -25,7 +25,7 @@ preamble = """
 - 专业术语使用后应附带简短解释
 """
 api_key = "sk-33e3643fd6db453c9015697413b44bae"
-chat_model = "qwen-max"
+chat_model = "deepseek-v3"
 
 # 嵌入模型配置（可选）
 [embedding]
