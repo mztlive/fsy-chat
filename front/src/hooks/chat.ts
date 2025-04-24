@@ -74,11 +74,6 @@ export const useChat = () => {
         setLoading(false)
     }
 
-    const handleSSEError = (error: SSEMessage) => {
-        console.error('SSE连接错误:', error)
-        // setSseError(error)
-    }
-
     // 建立SSE连接
     const connect = (_sessionId: string) => {
         // 关闭之前的连接
@@ -93,8 +88,10 @@ export const useChat = () => {
 
         // 错误处理
         source.onerror = (error: Event) => {
-            const data = JSON.parse((error as MessageEvent).data)
-            setSseError(data.message)
+            if (error instanceof MessageEvent && error.data) {
+                const data = JSON.parse(error.data)
+                setSseError(data.message)
+            }
 
             source.close()
             setEventSource(null)
@@ -111,6 +108,11 @@ export const useChat = () => {
             const source = eventSource()
             closeSSEConnection(source!)
         }
+
+        setMessages([])
+        setSessionId('')
+        setCurrentMessageId('')
+        setSseError('')
     }
 
     // 发送消息
@@ -152,5 +154,6 @@ export const useChat = () => {
         sendMessage,
         connect,
         loadMessageHistory,
+        cleanup,
     }
 }

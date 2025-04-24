@@ -16,11 +16,6 @@ use crate::agent::EmbeddingConfig;
 use crate::document_loader::DocumentManager;
 use crate::errors::{AppError, AppResult};
 
-type ResponseStream = Pin<Box<dyn Stream<Item = Result<StreamingChoice, CompletionError>> + Send>>;
-
-/// 表示处理流式响应的回调函数
-pub type ResponseCallback = Arc<dyn Fn(StreamingChoice) + Send + Sync>;
-
 #[derive(Debug, Clone)]
 pub struct SessionMessage {
     pub message: String,

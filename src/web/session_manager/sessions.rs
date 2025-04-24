@@ -1,4 +1,4 @@
-use std::{collections::HashMap, ops::Deref, sync::Arc};
+use std::{collections::HashMap, ops::Deref, path::Path, sync::Arc};
 
 use futures_util::future::join_all;
 use serde::Serialize;
@@ -14,7 +14,34 @@ pub struct SessionHistory {
 }
 
 /// 用户标识类型
-pub type UserID = String;
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
+pub struct UserID(String);
+
+impl From<&str> for UserID {
+    fn from(user_id: &str) -> Self {
+        UserID(user_id.to_string())
+    }
+}
+
+impl From<String> for UserID {
+    fn from(user_id: String) -> Self {
+        UserID(user_id)
+    }
+}
+
+impl Deref for UserID {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl AsRef<Path> for UserID {
+    fn as_ref(&self) -> &Path {
+        self.0.as_ref()
+    }
+}
 
 /// 聊天会话集合，管理单个用户的所有聊天会话
 #[derive(Clone)]
@@ -191,8 +218,10 @@ impl Sessions {
         user_id: &UserID,
         session_id: impl Into<String>,
     ) -> Option<ChatSession> {
-        let mut guard = self.grouped.lock().await;
         let session_id = session_id.into();
+
+        let mut guard = self.grouped.lock().await;
+        self.index.lock().await.remove(&session_id);
 
         guard
             .get_mut(user_id)

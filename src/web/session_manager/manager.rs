@@ -54,4 +54,13 @@ impl ChatSessionManager {
     pub fn sessions(&self) -> Sessions {
         self.sessions.clone()
     }
+
+    pub async fn remove_session(
+        &self,
+        user_id: &UserID,
+        session_id: &str,
+    ) -> Result<(), SessionManagerError> {
+        self.sessions.remove_session(user_id, session_id).await;
+        Ok(())
+    }
 }

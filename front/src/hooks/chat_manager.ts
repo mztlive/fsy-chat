@@ -1,6 +1,11 @@
 import { useMutation, useQuery } from '@tanstack/solid-query'
 import { createMemo, createResource } from 'solid-js'
-import { createChatSession, getAllDocumentCategories, getSessionHistory } from '~/api/chat'
+import {
+    createChatSession,
+    getAllDocumentCategories,
+    getSessionHistory,
+    removeSession as removeSessionApi,
+} from '~/api/chat'
 
 const NORMAL_REFETCH_INTERVAL = 10000
 
@@ -42,9 +47,16 @@ export const useChatManager = () => {
         },
     }))
 
+    const removeSession = useMutation(() => ({
+        mutationFn: async (sessionId: string) => {
+            return (await removeSessionApi(sessionId)).data
+        },
+    }))
+
     return {
         categories,
         createSession,
         sessionHistory,
+        removeSession,
     }
 }

@@ -5,7 +5,7 @@ use axum::{
         IntoResponse,
         sse::{Event, Sse},
     },
-    routing::{get, post},
+    routing::{delete, get, post},
 };
 
 use rig::message::Message;
@@ -23,6 +23,8 @@ use crate::{
         session_manager::SessionHistory,
     },
 };
+
+const DEFAULT_USER_ID: &str = "default";
 
 // 请求体结构
 #[derive(Debug, Deserialize)]
@@ -73,7 +75,7 @@ pub async fn session_history(State(app_state): State<AppState>) -> ApiResult<Vec
     let session = app_state
         .chat_session_manager
         .sessions()
-        .get_session_history(&"default".to_string())
+        .get_session_history(&DEFAULT_USER_ID.into())
         .await;
 
     Ok(ApiResponse::success(session))
@@ -104,7 +106,7 @@ pub async fn create_session(
     let (_, session_id) = app_state
         .chat_session_manager
         .create_session(
-            "default".to_string(),
+            DEFAULT_USER_ID.into(),
             agent_config,
             request.category,
             embedding_config,
@@ -114,6 +116,18 @@ pub async fn create_session(
         .await?;
 
     Ok(ApiResponse::success(NewSSEResponse { session_id }))
+}
+
+pub async fn remove_session(
+    State(app_state): State<AppState>,
+    Path(session_id): Path<String>,
+) -> ApiResult<()> {
+    app_state
+        .chat_session_manager
+        .remove_session(&DEFAULT_USER_ID.into(), &session_id)
+        .await?;
+
+    Ok(ApiResponse::success(()))
 }
 
 // SSE处理程序
@@ -185,4 +199,5 @@ pub fn chat_routes() -> Router<AppState> {
         .route("/all/document/category", get(get_all_document_category))
         .route("/session/history", get(session_history))
         .route("/message/history/{session_id}", get(message_history))
+        .route("/session/{session_id}", delete(remove_session))
 }

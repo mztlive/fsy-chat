@@ -1,4 +1,4 @@
-import { BASE_URL, get, post } from './request'
+import { BASE_URL, del, get, post } from './request'
 import {
     ApiResponse,
     ChatRequest,
@@ -72,4 +72,9 @@ export function getMessageHistory(
     sessionId: string
 ): Promise<ApiResponse<MessageHistoryResponse[]>> {
     return get<MessageHistoryResponse[]>(`/message/history/${sessionId}`)
+}
+
+// 删除会话
+export function removeSession(sessionId: string): Promise<ApiResponse<void>> {
+    return del<void>(`/session/${sessionId}`)
 }

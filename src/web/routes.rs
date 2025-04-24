@@ -38,7 +38,13 @@ pub fn create_router(app_state: AppState) -> Router {
                 .layer(
                     CorsLayer::new()
                         .allow_origin(origins)
-                        .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
+                        .allow_methods([
+                            Method::GET,
+                            Method::POST,
+                            Method::OPTIONS,
+                            Method::DELETE,
+                            Method::PUT,
+                        ])
                         .allow_headers([
                             header::AUTHORIZATION,
                             header::ACCEPT,

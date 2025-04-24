@@ -63,6 +63,18 @@ function ChatRoute() {
         navigate({ search: { session_id: sessionId } })
     }
 
+    // 处理删除会话
+    const handleDeleteSession = async (sessionId: string) => {
+        await chatManager.removeSession.mutateAsync(sessionId)
+
+        if (sessionId === activeSessionId()) {
+            chat.cleanup()
+            navigate({ search: { session_id: undefined } })
+        }
+
+        chatManager.sessionHistory.refetch()
+    }
+
     return (
         <div class="h-screen flex bg-base-100 text-base-content overflow-hidden">
             {/* 侧边栏遮罩 - 仅在移动端显示 */}
@@ -83,6 +95,7 @@ function ChatRoute() {
                     activeSessionId={activeSessionId() ?? null}
                     onSelectSession={handleSelectSession}
                     onCreateNewSession={handleCreateNewSession}
+                    onDeleteSession={handleDeleteSession}
                     categories={[]}
                 />
             </div>
