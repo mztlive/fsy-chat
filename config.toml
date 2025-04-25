@@ -33,7 +33,6 @@ chat_model = "qwen-max"
 api_key = "sk-33e3643fd6db453c9015697413b44bae"
 model = "text-embedding-v2"
 dimensions = 1536
-collection_name = "documents"
 
 
 # 文档配置
@@ -42,4 +41,3 @@ collection_name = "documents"
 [[document.categories]]
 name = "客服"
 directory = "./docs"
-collection_name = "kefu3"

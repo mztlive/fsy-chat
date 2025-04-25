@@ -1,5 +1,5 @@
-use crate::document_loader::DocumentManager;
 /// 代理模块，提供与AI模型交互的功能，支持嵌入式向量和检索增强生成
+use crate::document_loader::DocumentManager;
 use crate::errors::AppResult;
 use crate::vector_store;
 use rig::agent::Agent;
@@ -58,7 +58,6 @@ fn create_client(api_key: &str) -> openai::Client {
 /// * `agent_config` - 代理的基本配置
 /// * `embedding_config` - 可选的嵌入模型配置，如果提供则启用检索增强生成
 /// * `document_manager` - 可选的文档管理器，提供向量存储需要的文档
-/// * `qdrant_url` - Qdrant向量数据库的URL
 /// * `category_name` - 可选的文档类别名称，用于创建向量存储
 ///
 /// # 返回值
@@ -77,7 +76,7 @@ fn create_client(api_key: &str) -> openai::Client {
 ///     };
 ///     
 ///     // 不使用嵌入功能的代理
-///     let agent = agent::initialize_agent(config, None, None, None, None).await?;
+///     let agent = agent::initialize_agent(config, None, None, None).await?;
 ///     
 ///     Ok(())
 /// }
@@ -96,7 +95,7 @@ pub async fn initialize_agent(
         .agent(&agent_config.chat_model)
         .preamble(&agent_config.preamble);
 
-    // 如果提供了嵌入配置、文档管理器、Qdrant URL和类别名称，添加向量存储功能
+    // 如果提供了嵌入配置、文档管理器和类别名称，添加向量存储功能
     if let (Some(embed_config), Some(doc_manager), Some(category)) =
         (embedding_config, document_manager, category_name)
     {
@@ -117,10 +116,7 @@ pub async fn initialize_agent(
         // 初始化向量存储
         let index = vector_store::initialize_vector_store(
             embedding.clone(),
-            vector_store::VectorStoreConfig::new(
-                category_config.collection_name.clone(),
-                embed_config.dimensions as u64,
-            ),
+            vector_store::VectorStoreConfig::new(embed_config.dimensions as u64),
             doc_manager,
         )
         .await?;
@@ -153,8 +149,6 @@ pub async fn initialize_agent(
 ///         api_key: "your-api-key".to_string(),
 ///         model: "text-embedding-v1".to_string(),
 ///         dimensions: 1536,
-///         collection_name: "documents".to_string(),
-///         qdrant_url: "http://localhost:6334".to_string(),
 ///     };
 ///     
 ///     let embedding_model = agent::create_embedding_model(client, &config).await;

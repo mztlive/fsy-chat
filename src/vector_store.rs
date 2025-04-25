@@ -17,8 +17,6 @@ use tracing::info;
 ///
 /// 包含初始化Qdrant向量数据库所需的配置参数
 pub struct VectorStoreConfig {
-    /// Qdrant集合名称
-    collection_name: String,
     /// 向量维度
     dimensions: u64,
 }
@@ -38,26 +36,22 @@ impl VectorStoreConfig {
     /// use fsy_ai_chat::vector_store::VectorStoreConfig;
     ///
     /// let config = VectorStoreConfig::new(
-    ///     "documents".to_string(),
-    ///     "http://localhost:6334".to_string(),
     ///     1536,
     /// );
     /// ```
-    pub fn new(collection_name: String, dimensions: u64) -> Self {
-        Self {
-            collection_name,
-            dimensions,
-        }
+    pub fn new(dimensions: u64) -> Self {
+        Self { dimensions }
     }
 }
 
 /// 初始化向量存储
 ///
-/// 加载文档，创建嵌入，并初始化Qdrant向量存储。如果指定的集合不存在，会创建新集合。
+/// 加载文档，创建嵌入，并初始化向量存储。
 ///
 /// # 参数
 /// * `model` - 实现了EmbeddingModel特性的嵌入模型
 /// * `config` - 向量存储配置
+/// * `document_manager` - 文档管理器，提供文档数据
 ///
 /// # 返回值
 /// 返回初始化好的向量存储索引，如果初始化过程中发生错误则返回错误
@@ -65,6 +59,7 @@ impl VectorStoreConfig {
 /// # 示例
 /// ```
 /// use fsy_ai_chat::vector_store::{self, VectorStoreConfig};
+/// use fsy_ai_chat::document_loader::DocumentManager;
 /// use rig::providers::openai::{Client, EmbeddingModel};
 ///
 /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
@@ -75,12 +70,14 @@ impl VectorStoreConfig {
 ///     // 配置向量存储
 ///     let config = VectorStoreConfig::new(
 ///         "documents".to_string(),
-///         "http://localhost:6334".to_string(),
 ///         1536,
 ///     );
 ///
+///     // 初始化文档管理器
+///     let doc_manager = DocumentManager::new();
+///
 ///     // 初始化向量存储
-///     let index = vector_store::initialize_vector_store(model, config).await?;
+///     let index = vector_store::initialize_vector_store(model, config, doc_manager).await?;
 ///
 ///     Ok(())
 /// }

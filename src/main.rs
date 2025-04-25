@@ -38,6 +38,25 @@ struct Args {
 }
 
 /// 从文件加载配置
+///
+/// # 参数
+/// * `path` - 配置文件路径
+///
+/// # 返回值
+/// 返回加载的配置对象，如果加载失败则返回错误
+///
+/// # 示例
+/// ```
+/// use std::path::PathBuf;
+/// use fsy_ai_chat::main::load_config;
+///
+/// fn example() -> Result<(), Box<dyn std::error::Error>> {
+///     let config_path = PathBuf::from("config.toml");
+///     let config = load_config(&config_path)?;
+///     println!("加载配置成功");
+///     Ok(())
+/// }
+/// ```
 fn load_config(path: &PathBuf) -> AppResult<Config> {
     let config_content = std::fs::read_to_string(path)?;
     let config: Config = toml::from_str(&config_content)
@@ -46,6 +65,25 @@ fn load_config(path: &PathBuf) -> AppResult<Config> {
 }
 
 /// 初始化文档管理器
+///
+/// 根据配置中的文档类目信息，加载所有文档
+///
+/// # 参数
+/// * `config` - 应用配置
+///
+/// # 返回值
+/// 返回初始化好的文档管理器，如果初始化失败则返回错误
+///
+/// # 示例
+/// ```
+/// use fsy_ai_chat::config::Config;
+///
+/// async fn example(config: Config) -> Result<(), Box<dyn std::error::Error>> {
+///     let doc_manager = initialize_document_manager(&config).await?;
+///     println!("文档管理器初始化成功");
+///     Ok(())
+/// }
+/// ```
 async fn initialize_document_manager(config: &Config) -> AppResult<DocumentManager> {
     let mut manager = DocumentManager::new();
 
@@ -58,6 +96,21 @@ async fn initialize_document_manager(config: &Config) -> AppResult<DocumentManag
     Ok(manager)
 }
 
+/// 定期持久化聊天会话
+///
+/// 启动一个后台任务，定期将聊天会话状态保存到文件系统
+///
+/// # 参数
+/// * `app_state` - 应用状态，包含聊天会话管理器
+///
+/// # 示例
+/// ```
+/// use fsy_ai_chat::web::AppState;
+///
+/// async fn example(app_state: AppState) {
+///     dump_chat_sessions(app_state).await;
+/// }
+/// ```
 async fn dump_chat_sessions(app_state: AppState) {
     let sessions = app_state.chat_session_manager.sessions();
     let file_storage = FileStorage::new("./".to_string());
@@ -77,6 +130,21 @@ async fn dump_chat_sessions(app_state: AppState) {
     }
 }
 
+/// 加载持久化的聊天会话
+///
+/// 从文件系统加载之前保存的聊天会话状态
+///
+/// # 参数
+/// * `app_state` - 应用状态，包含聊天会话管理器
+///
+/// # 示例
+/// ```
+/// use fsy_ai_chat::web::AppState;
+///
+/// async fn example(app_state: AppState) {
+///     load_chat_sessions(app_state).await;
+/// }
+/// ```
 async fn load_chat_sessions(app_state: AppState) {
     let file_storage = FileStorage::new("./".to_string());
     let sessions = app_state.chat_session_manager.sessions();
@@ -95,6 +163,30 @@ async fn load_chat_sessions(app_state: AppState) {
 }
 
 /// 启动Web服务器
+///
+/// 初始化并启动Web服务，包括加载会话、设置持久化任务等
+///
+/// # 参数
+/// * `config` - 应用配置
+/// * `doc_manager` - 文档管理器
+/// * `port` - Web服务器监听端口
+///
+/// # 返回值
+/// 如果服务器启动并运行成功直到关闭则返回Ok，否则返回错误
+///
+/// # 示例
+/// ```
+/// use fsy_ai_chat::config::Config;
+/// use fsy_ai_chat::document_loader::DocumentManager;
+///
+/// async fn example(
+///     config: Config,
+///     doc_manager: DocumentManager
+/// ) -> Result<(), Box<dyn std::error::Error>> {
+///     start_web_server(config, doc_manager, 3000).await?;
+///     Ok(())
+/// }
+/// ```
 async fn start_web_server(
     config: Config,
     doc_manager: DocumentManager,
@@ -127,6 +219,18 @@ async fn start_web_server(
     Ok(())
 }
 
+/// 程序入口点
+///
+/// 解析命令行参数，加载配置，根据运行模式启动CLI或Web服务
+///
+/// # 示例
+/// ```no_run
+/// #[tokio::main]
+/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+///     fsy_ai_chat::main();
+///     Ok(())
+/// }
+/// ```
 #[tokio::main]
 async fn main() -> AppResult<()> {
     // 初始化tracing
