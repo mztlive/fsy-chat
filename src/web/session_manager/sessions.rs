@@ -4,12 +4,7 @@ use futures_util::future::join_all;
 use serde::Serialize;
 use tokio::sync::Mutex;
 
-use crate::{
-    agent::{AgentConfig, EmbeddingConfig},
-    chat::{ChatSession, ChatSessionView},
-    document_loader::DocumentManager,
-    errors::AppResult,
-};
+use crate::chat::ChatSession;
 
 /// 对前端友好的会话历史
 #[derive(Debug, Clone, Serialize)]
@@ -61,28 +56,6 @@ pub struct UserChatSessions {
 }
 
 impl UserChatSessions {
-    pub async fn from_view(
-        views: Vec<ChatSessionView>,
-        config: AgentConfig,
-        embedding_config: Option<EmbeddingConfig>,
-        document_manager: Option<DocumentManager>,
-    ) -> AppResult<Self> {
-        let mut sessions = Self::new();
-        for view in views {
-            let session = ChatSession::from_view(
-                view,
-                config.clone(),
-                embedding_config.clone(),
-                document_manager.clone(),
-            )
-            .await?;
-
-            sessions.insert(uuid::Uuid::new_v4().to_string(), session);
-        }
-
-        Ok(sessions)
-    }
-
     /// 创建一个新的聊天会话集合
     pub fn new() -> Self {
         Self {
@@ -127,22 +100,6 @@ impl UserChatSessions {
     /// * `usize` - 会话数量
     pub fn len(&self) -> usize {
         self.inner.len()
-    }
-
-    /// 检查会话集合是否为空
-    ///
-    /// # 返回
-    /// * `bool` - 如果为空则返回true，否则返回false
-    pub fn is_empty(&self) -> bool {
-        self.inner.is_empty()
-    }
-
-    /// 将会话集合转换为会话向量
-    ///
-    /// # 返回
-    /// * `Vec<ChatSession>` - 包含所有会话的向量
-    pub fn to_vec(&self) -> Vec<ChatSession> {
-        self.inner.values().cloned().collect()
     }
 }
 
@@ -194,21 +151,6 @@ impl Sessions {
     /// * `Option<ChatSessions>` - 如果存在则返回用户的会话集合，否则返回None
     pub async fn get_sessions(&self, user_id: &UserID) -> Option<UserChatSessions> {
         self.grouped.lock().await.get(user_id).cloned()
-    }
-
-    /// 获取指定用户的会话数量
-    ///
-    /// # 参数
-    /// * `user_id` - 用户ID
-    ///
-    /// # 返回
-    /// * `usize` - 该用户的会话数量
-    pub async fn len(&self, user_id: &UserID) -> usize {
-        self.grouped
-            .lock()
-            .await
-            .get(user_id)
-            .map_or(0, |sessions| sessions.len())
     }
 
     /// 获取当前管理的用户总数
@@ -271,25 +213,6 @@ impl Sessions {
         guard
             .get_mut(user_id)
             .and_then(|sessions| sessions.remove(&session_id))
-    }
-
-    /// 获取所有用户及其会话的集合
-    ///
-    /// # 返回
-    /// * `Vec<(UserID, ChatSessions)>` - 包含所有用户及其会话的集合
-    ///
-    /// # 示例
-    /// ```rust
-    /// let sessions = Sessions::new();
-    /// let vec = sessions.into_iter().await;
-    /// ```
-    pub async fn into_iter(&self) -> Vec<(UserID, UserChatSessions)> {
-        self.grouped
-            .lock()
-            .await
-            .iter()
-            .map(|(user_id, sessions)| (user_id.clone(), sessions.clone()))
-            .collect()
     }
 
     /// 获取所有用户ID的集合

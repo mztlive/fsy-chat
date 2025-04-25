@@ -8,9 +8,6 @@ pub enum SessionManagerError {
     #[error("App error: {0}")]
     AppError(#[from] crate::errors::AppError),
 
-    #[error("Persistence error: {0}")]
-    PersistenceError(String),
-
     #[error("Storage error: {0}")]
     StorageError(#[from] StorageError),
 }

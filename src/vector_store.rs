@@ -8,37 +8,6 @@ use rig::vector_store::VectorStoreIndex;
 use rig::vector_store::in_memory_store::InMemoryVectorStore;
 use tracing::info;
 
-/// 向量存储配置结构体
-///
-/// 包含初始化Qdrant向量数据库所需的配置参数
-pub struct VectorStoreConfig {
-    /// 向量维度
-    dimensions: u64,
-}
-
-impl VectorStoreConfig {
-    /// 创建新的向量存储配置
-    ///
-    /// # 参数
-    /// * `collection_name` - Qdrant集合名称
-    /// * `dimensions` - 向量维度
-    ///
-    /// # 返回值
-    /// 返回配置好的VectorStoreConfig实例
-    ///
-    /// # 示例
-    /// ```
-    /// use fsy_ai_chat::vector_store::VectorStoreConfig;
-    ///
-    /// let config = VectorStoreConfig::new(
-    ///     1536,
-    /// );
-    /// ```
-    pub fn new(dimensions: u64) -> Self {
-        Self { dimensions }
-    }
-}
-
 /// 初始化向量存储
 ///
 /// 加载文档，创建嵌入，并初始化向量存储。
@@ -77,9 +46,8 @@ impl VectorStoreConfig {
 ///     Ok(())
 /// }
 /// ```
-pub async fn initialize_vector_store(
+pub async fn create_vector_store(
     model: impl EmbeddingModel,
-    config: VectorStoreConfig,
     document_manager: DocumentManager,
 ) -> AppResult<impl VectorStoreIndex> {
     // 加载文档
@@ -103,31 +71,6 @@ pub async fn initialize_vector_store(
 
         documents.extend(builder.build().await.unwrap());
     }
-
-    // 创建Qdrant客户端
-    // let client = Qdrant::from_url(config.qdrant_url.as_str())
-    //     .skip_compatibility_check()
-    //     .build()?;
-
-    // // 检查集合是否存在，不存在则创建
-    // if !client
-    //     .collection_exists(config.collection_name.clone())
-    //     .await?
-    // {
-    //     client
-    //         .create_collection(
-    //             CreateCollectionBuilder::new(config.collection_name.clone()).vectors_config(
-    //                 VectorParamsBuilder::new(config.dimensions, Distance::Cosine),
-    //             ),
-    //         )
-    //         .await?;
-    // }
-
-    // // 配置查询参数
-    // let query_params = QueryPointsBuilder::new(config.collection_name.clone()).with_payload(true);
-
-    // // 创建向量存储
-    // let vector_store = QdrantVectorStore::new(client, model, query_params.build());
 
     let vector_store = InMemoryVectorStore::from_documents(documents);
     let index = vector_store.index(model);

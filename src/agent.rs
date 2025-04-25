@@ -85,7 +85,6 @@ pub async fn initialize_agent(
     agent_config: AgentConfig,
     embedding_config: Option<EmbeddingConfig>,
     document_manager: Option<DocumentManager>,
-    category_name: Option<String>,
 ) -> AppResult<Agent<openai::CompletionModel>> {
     // 创建客户端
     let client = create_client(&agent_config.api_key);
@@ -96,30 +95,12 @@ pub async fn initialize_agent(
         .preamble(&agent_config.preamble);
 
     // 如果提供了嵌入配置、文档管理器和类别名称，添加向量存储功能
-    if let (Some(embed_config), Some(doc_manager), Some(category)) =
-        (embedding_config, document_manager, category_name)
-    {
+    if let (Some(embed_config), Some(doc_manager)) = (embedding_config, document_manager) {
         // 创建嵌入模型
         let embedding = create_embedding_model(client.clone(), &embed_config).await;
 
-        // 获取该类别的配置
-        let category_config = doc_manager
-            .get_category_config(&category)
-            .await
-            .ok_or_else(|| {
-                std::io::Error::new(
-                    std::io::ErrorKind::NotFound,
-                    format!("Category {} not found", category),
-                )
-            })?;
-
         // 初始化向量存储
-        let index = vector_store::initialize_vector_store(
-            embedding.clone(),
-            vector_store::VectorStoreConfig::new(embed_config.dimensions as u64),
-            doc_manager,
-        )
-        .await?;
+        let index = vector_store::create_vector_store(embedding.clone(), doc_manager).await?;
 
         // 添加动态上下文
         builder = builder.dynamic_context(5, index);

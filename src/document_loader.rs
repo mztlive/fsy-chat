@@ -234,30 +234,4 @@ impl DocumentManager {
             .cloned()
             .collect()
     }
-
-    /// 获取类目配置
-    ///
-    /// # 参数
-    /// * `category` - 类目名称
-    ///
-    /// # 返回值
-    /// 返回指定类目的配置，如果类目不存在则返回None
-    ///
-    /// # 示例
-    /// ```
-    /// use fsy_ai_chat::document_loader::DocumentManager;
-    ///
-    /// async fn example() {
-    ///     let manager = DocumentManager::new();
-    ///     
-    ///     if let Some(config) = manager.get_category_config("faq").await {
-    ///         println!("类目集合名称: {}", config.collection_name);
-    ///     } else {
-    ///         println!("类目不存在");
-    ///     }
-    /// }
-    /// ```
-    pub async fn get_category_config(&self, category: &str) -> Option<CategoryConfig> {
-        self.category_configs.lock().await.get(category).cloned()
-    }
 }

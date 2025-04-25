@@ -147,13 +147,8 @@ impl ChatSession {
         document_manager: Option<DocumentManager>,
         doc_category: Option<String>,
     ) -> AppResult<Self> {
-        let agent = crate::agent::initialize_agent(
-            config,
-            embedding_config,
-            document_manager,
-            doc_category.clone(),
-        )
-        .await?;
+        let agent =
+            crate::agent::initialize_agent(config, embedding_config, document_manager).await?;
 
         let (session_tx, _) = broadcast::channel(100);
 

@@ -10,14 +10,6 @@ use super::session_manager::errors::SessionManagerError;
 pub enum WebError {
     #[error("Session not found")]
     SessionNotFound,
-    #[error("Session already exists")]
-    SessionAlreadyExists,
-    #[error("Session not created")]
-    SessionNotCreated,
-    #[error("Session not updated")]
-    SessionNotUpdated,
-    #[error("Session not deleted")]
-    SessionNotDeleted,
 
     #[error("Internal server error: {0}")]
     InternalServerError(#[from] AppError),
@@ -27,12 +19,6 @@ pub enum WebError {
 
     #[error("Session manager error: {0}")]
     SessionManagerError(#[from] SessionManagerError),
-}
-
-impl WebError {
-    pub fn error_response(&self) -> String {
-        format!("Error: {}", self)
-    }
 }
 
 #[derive(Debug, Serialize)]
@@ -71,6 +57,7 @@ impl<T: Default + Serialize> ApiResponse<T> {
         }
     }
 
+    #[allow(unused)]
     pub fn unauthorized(message: String) -> Self {
         Self {
             status: 401,
@@ -79,6 +66,7 @@ impl<T: Default + Serialize> ApiResponse<T> {
         }
     }
 
+    #[allow(unused)]
     pub fn not_permitted(message: String) -> Self {
         Self {
             status: 403,
