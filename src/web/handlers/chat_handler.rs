@@ -16,10 +16,10 @@ use std::time::Duration;
 use uuid::Uuid;
 
 use crate::web::{
-        app_state::AppState,
-        errors::{ApiResponse, ApiResult, WebError},
-        session_manager::SessionHistory,
-    };
+    app_state::AppState,
+    errors::{ApiResponse, ApiResult, WebError},
+    session_manager::SessionHistory,
+};
 
 const DEFAULT_USER_ID: &str = "default";
 
