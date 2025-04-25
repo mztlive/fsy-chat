@@ -2,15 +2,10 @@ use crate::document_loader::DocumentManager;
 /// 向量存储模块，提供文档嵌入和向量检索功能
 use crate::errors::AppResult;
 use crate::models::Document;
-use qdrant_client::Qdrant;
-use qdrant_client::qdrant::{
-    CreateCollectionBuilder, Distance, QueryPointsBuilder, VectorParamsBuilder,
-};
 use rig::OneOrMany;
 use rig::embeddings::{Embedding, EmbeddingModel, EmbeddingsBuilder};
 use rig::vector_store::VectorStoreIndex;
-use rig::vector_store::in_memory_store::{InMemoryVectorIndex, InMemoryVectorStore};
-use rig_qdrant::QdrantVectorStore;
+use rig::vector_store::in_memory_store::InMemoryVectorStore;
 use tracing::info;
 
 /// 向量存储配置结构体

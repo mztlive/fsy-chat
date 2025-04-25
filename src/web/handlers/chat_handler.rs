@@ -10,19 +10,16 @@ use axum::{
 
 use rig::message::Message;
 use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
+use serde_json::json;
 use std::convert::Infallible;
 use std::time::Duration;
 use uuid::Uuid;
 
-use crate::{
-    chat::ChatSession,
-    web::{
+use crate::web::{
         app_state::AppState,
         errors::{ApiResponse, ApiResult, WebError},
         session_manager::SessionHistory,
-    },
-};
+    };
 
 const DEFAULT_USER_ID: &str = "default";
 

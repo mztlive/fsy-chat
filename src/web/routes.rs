@@ -9,7 +9,7 @@ use axum::{Router, extract::DefaultBodyLimit};
 use tower::{ServiceBuilder, timeout::TimeoutLayer};
 use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
-use tracing::{Level, info};
+use tracing::info;
 
 use crate::web::{app_state::AppState, handlers::chat_handler::chat_routes};
 
