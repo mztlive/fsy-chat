@@ -101,7 +101,6 @@ pub async fn create_session(
     let agent_config = app_state.config.agent.clone();
     let embedding_config = app_state.config.embedding.clone();
     let document_manager = app_state.doc_manager.clone();
-    let qdrant_url = app_state.config.qdrant_url.clone();
 
     let (_, session_id) = app_state
         .chat_session_manager
@@ -111,7 +110,6 @@ pub async fn create_session(
             request.category,
             embedding_config,
             Some(document_manager),
-            Some(qdrant_url),
         )
         .await?;
 

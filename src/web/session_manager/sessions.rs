@@ -1,10 +1,15 @@
-use std::{collections::HashMap, ops::Deref, path::Path, sync::Arc};
+use std::{collections::HashMap, fmt::Display, ops::Deref, path::Path, sync::Arc};
 
 use futures_util::future::join_all;
 use serde::Serialize;
 use tokio::sync::Mutex;
 
-use crate::chat::ChatSession;
+use crate::{
+    agent::{AgentConfig, EmbeddingConfig},
+    chat::{ChatSession, ChatSessionView},
+    document_loader::DocumentManager,
+    errors::AppResult,
+};
 
 /// 对前端友好的会话历史
 #[derive(Debug, Clone, Serialize)]
@@ -16,6 +21,12 @@ pub struct SessionHistory {
 /// 用户标识类型
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 pub struct UserID(String);
+
+impl Display for UserID {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 impl From<&str> for UserID {
     fn from(user_id: &str) -> Self {
@@ -45,11 +56,33 @@ impl AsRef<Path> for UserID {
 
 /// 聊天会话集合，管理单个用户的所有聊天会话
 #[derive(Clone)]
-pub struct ChatSessions {
+pub struct UserChatSessions {
     inner: HashMap<String, ChatSession>,
 }
 
-impl ChatSessions {
+impl UserChatSessions {
+    pub async fn from_view(
+        views: Vec<ChatSessionView>,
+        config: AgentConfig,
+        embedding_config: Option<EmbeddingConfig>,
+        document_manager: Option<DocumentManager>,
+    ) -> AppResult<Self> {
+        let mut sessions = Self::new();
+        for view in views {
+            let session = ChatSession::from_view(
+                view,
+                config.clone(),
+                embedding_config.clone(),
+                document_manager.clone(),
+            )
+            .await?;
+
+            sessions.insert(uuid::Uuid::new_v4().to_string(), session);
+        }
+
+        Ok(sessions)
+    }
+
     /// 创建一个新的聊天会话集合
     pub fn new() -> Self {
         Self {
@@ -113,7 +146,7 @@ impl ChatSessions {
     }
 }
 
-impl Deref for ChatSessions {
+impl Deref for UserChatSessions {
     type Target = HashMap<String, ChatSession>;
 
     fn deref(&self) -> &Self::Target {
@@ -125,10 +158,10 @@ impl Deref for ChatSessions {
 #[derive(Clone)]
 pub struct Sessions {
     /// 按用户ID组织的会话集合
-    grouped: Arc<Mutex<HashMap<UserID, ChatSessions>>>,
+    grouped: Arc<Mutex<HashMap<UserID, UserChatSessions>>>,
 
     /// 所有会话的快速索引，不区分用户ID，用于通过session_id快速获取ChatSession
-    index: Arc<Mutex<ChatSessions>>,
+    index: Arc<Mutex<UserChatSessions>>,
 }
 
 impl Sessions {
@@ -136,7 +169,19 @@ impl Sessions {
     pub fn new() -> Self {
         Self {
             grouped: Arc::new(Mutex::new(HashMap::new())),
-            index: Arc::new(Mutex::new(ChatSessions::new())),
+            index: Arc::new(Mutex::new(UserChatSessions::new())),
+        }
+    }
+
+    pub async fn add_user_session(&self, user_id: UserID, sessions: UserChatSessions) {
+        let mut guard = self.grouped.lock().await;
+        guard.insert(user_id, sessions.clone());
+
+        for (session_id, session) in sessions.inner.iter() {
+            self.index
+                .lock()
+                .await
+                .insert(session_id.clone(), session.clone());
         }
     }
 
@@ -147,7 +192,7 @@ impl Sessions {
     ///
     /// # 返回
     /// * `Option<ChatSessions>` - 如果存在则返回用户的会话集合，否则返回None
-    pub async fn get_sessions(&self, user_id: &UserID) -> Option<ChatSessions> {
+    pub async fn get_sessions(&self, user_id: &UserID) -> Option<UserChatSessions> {
         self.grouped.lock().await.get(user_id).cloned()
     }
 
@@ -198,7 +243,7 @@ impl Sessions {
         session: ChatSession,
     ) {
         let mut guard = self.grouped.lock().await;
-        let sessions = guard.entry(user_id).or_insert(ChatSessions::new());
+        let sessions = guard.entry(user_id).or_insert(UserChatSessions::new());
         let session_id = session_id.into();
 
         sessions.insert(session_id.clone(), session.clone());
@@ -238,7 +283,7 @@ impl Sessions {
     /// let sessions = Sessions::new();
     /// let vec = sessions.into_iter().await;
     /// ```
-    pub async fn into_iter(&self) -> Vec<(UserID, ChatSessions)> {
+    pub async fn into_iter(&self) -> Vec<(UserID, UserChatSessions)> {
         self.grouped
             .lock()
             .await

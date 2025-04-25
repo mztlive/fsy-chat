@@ -26,19 +26,12 @@ impl ChatSessionManager {
         category: Option<String>,
         embedding_config: Option<EmbeddingConfig>,
         document_manager: Option<DocumentManager>,
-        qdrant_url: Option<String>,
     ) -> std::result::Result<(ChatSession, String), SessionManagerError> {
         let session_id = uuid::Uuid::new_v4().to_string();
 
         // 创建新会话
-        let session = ChatSession::new(
-            agent_config,
-            embedding_config,
-            document_manager,
-            qdrant_url,
-            category,
-        )
-        .await?;
+        let session =
+            ChatSession::new(agent_config, embedding_config, document_manager, category).await?;
 
         self.sessions
             .add_session(user_id, session_id.clone(), session.clone())

@@ -86,7 +86,6 @@ pub async fn initialize_agent(
     agent_config: AgentConfig,
     embedding_config: Option<EmbeddingConfig>,
     document_manager: Option<DocumentManager>,
-    qdrant_url: Option<String>,
     category_name: Option<String>,
 ) -> AppResult<Agent<openai::CompletionModel>> {
     // 创建客户端
@@ -98,12 +97,9 @@ pub async fn initialize_agent(
         .preamble(&agent_config.preamble);
 
     // 如果提供了嵌入配置、文档管理器、Qdrant URL和类别名称，添加向量存储功能
-    if let (Some(embed_config), Some(doc_manager), Some(qdrant_url), Some(category)) = (
-        embedding_config,
-        document_manager,
-        qdrant_url,
-        category_name,
-    ) {
+    if let (Some(embed_config), Some(doc_manager), Some(category)) =
+        (embedding_config, document_manager, category_name)
+    {
         // 创建嵌入模型
         let embedding = create_embedding_model(client.clone(), &embed_config).await;
 
@@ -123,7 +119,6 @@ pub async fn initialize_agent(
             embedding.clone(),
             vector_store::VectorStoreConfig::new(
                 category_config.collection_name.clone(),
-                qdrant_url,
                 embed_config.dimensions as u64,
             ),
             doc_manager,

@@ -1,14 +1,13 @@
-use futures_util::Stream;
 use futures_util::stream::StreamExt;
 use rig::agent::Agent;
-use rig::completion::{Chat, Completion, CompletionError};
+use rig::completion::Chat;
 use rig::message::Message;
 use rig::providers::openai::CompletionModel;
 use rig::streaming::{StreamingChat, StreamingChoice};
-use std::pin::Pin;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::{RwLock, broadcast};
-use tokio::time::Instant;
+use tokio::time::{Duration, Instant};
 use uuid::Uuid;
 
 use crate::agent::AgentConfig;
@@ -31,23 +30,55 @@ pub struct ChatSession {
     last_message_at: Arc<RwLock<Option<Instant>>>,
     /// 会话消息发送器，用于向会话流发送用户查询
     session_tx: broadcast::Sender<SessionMessage>,
+    doc_category: Option<String>,
 }
 
 impl ChatSession {
+    pub async fn to_view(&self) -> ChatSessionView {
+        ChatSessionView {
+            summary: self.summary().await,
+            history: self.get_history().await,
+            last_message_at: self.last_message_at().await.elapsed().as_millis() as i64,
+            doc_category: self.doc_category.clone(),
+        }
+    }
+
+    pub async fn from_view(
+        view: ChatSessionView,
+        config: AgentConfig,
+        embedding_config: Option<EmbeddingConfig>,
+        document_manager: Option<DocumentManager>,
+    ) -> AppResult<Self> {
+        let mut session = Self::new(
+            config,
+            embedding_config,
+            document_manager,
+            view.doc_category.clone(),
+        )
+        .await?;
+
+        session.set_history(view.history).await;
+        *session.summary.write().await = view.summary;
+        *session.last_message_at.write().await =
+            Some(Instant::now() - Duration::from_millis(view.last_message_at as u64));
+
+        session.doc_category = view.doc_category;
+
+        Ok(session)
+    }
+
     /// 创建一个新的聊天会话
     pub async fn new(
         config: AgentConfig,
         embedding_config: Option<EmbeddingConfig>,
         document_manager: Option<DocumentManager>,
-        qdrant_url: Option<String>,
         doc_category: Option<String>,
     ) -> AppResult<Self> {
         let agent = crate::agent::initialize_agent(
             config,
             embedding_config,
             document_manager,
-            qdrant_url,
-            doc_category,
+            doc_category.clone(),
         )
         .await?;
 
@@ -59,6 +90,7 @@ impl ChatSession {
             history: Arc::new(RwLock::new(Vec::new())),
             last_message_at: Arc::new(RwLock::new(None)),
             session_tx,
+            doc_category,
         })
     }
 
@@ -74,7 +106,7 @@ impl ChatSession {
 
     /// 设置会话历史
     pub async fn set_history(&mut self, history: Vec<Message>) {
-        self.history.write().await.clear();
+        *self.history.write().await = history;
     }
 
     /// 添加消息到历史
@@ -163,6 +195,14 @@ impl ChatSession {
     }
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct ChatSessionView {
+    pub summary: String,
+    pub history: Vec<Message>,
+    pub last_message_at: i64,
+    pub doc_category: Option<String>,
+}
+
 /// CLI相关的帮助函数，可供CLI入口使用
 pub mod cli {
     use super::*;
@@ -188,15 +228,9 @@ pub mod cli {
     pub async fn start_cli_session(config: crate::config::Config, doc_manager: DocumentManager) {
         print_welcome_message();
 
-        let mut session = ChatSession::new(
-            config.agent,
-            config.embedding,
-            Some(doc_manager),
-            Some(config.qdrant_url),
-            None,
-        )
-        .await
-        .unwrap();
+        let mut session = ChatSession::new(config.agent, config.embedding, Some(doc_manager), None)
+            .await
+            .unwrap();
 
         let mut receiver = session.subscribe();
 

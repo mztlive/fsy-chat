@@ -77,6 +77,23 @@ async fn dump_chat_sessions(app_state: AppState) {
     }
 }
 
+async fn load_chat_sessions(app_state: AppState) {
+    let file_storage = FileStorage::new("./".to_string());
+    let sessions = app_state.chat_session_manager.sessions();
+
+    file_storage
+        .load(
+            &sessions,
+            app_state.config.agent.clone(),
+            app_state.config.embedding.clone(),
+            Some(app_state.doc_manager.clone()),
+        )
+        .await
+        .expect("加载聊天会话失败");
+
+    info!("聊天会话加载完成");
+}
+
 /// 启动Web服务器
 async fn start_web_server(
     config: Config,
@@ -86,9 +103,11 @@ async fn start_web_server(
     info!("初始化Web服务器");
     // 初始化聊天会话管理器
     let app_state = AppState::new(config, doc_manager);
-    let app_state_clone = app_state.clone();
+
+    load_chat_sessions(app_state.clone()).await;
 
     info!("启动聊天会话持久化后台任务");
+    let app_state_clone = app_state.clone();
     tokio::spawn(async move {
         dump_chat_sessions(app_state_clone).await;
     });

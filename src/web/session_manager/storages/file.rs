@@ -1,11 +1,15 @@
 use std::path::{Path, PathBuf};
 
-use tokio::fs::File;
+use tokio::fs::{self, File};
 use tokio::io::AsyncWriteExt;
 
+use crate::agent::{AgentConfig, EmbeddingConfig};
+use crate::chat::ChatSessionView;
+use crate::document_loader::DocumentManager;
+use crate::web::session_manager::UserID;
 use crate::{
     chat::ChatSession,
-    web::session_manager::{ChatSessions, Sessions},
+    web::session_manager::{Sessions, UserChatSessions},
 };
 
 use super::storage::{Storage, StorageError};
@@ -21,7 +25,7 @@ impl FileStorage {
 
     async fn save_user_sessions(
         &self,
-        sessions: &ChatSessions,
+        sessions: &UserChatSessions,
         user_dir: &PathBuf,
     ) -> Result<(), StorageError> {
         let sessions = sessions
@@ -32,12 +36,91 @@ impl FileStorage {
         for (session_id, session) in sessions {
             let mut file = File::create(user_dir.join(format!("{}.json", session_id))).await?;
 
-            let history = session.get_history().await;
-            let history = serde_json::to_string(&history)?;
-            file.write_all(history.as_bytes()).await?;
+            let session_view = session.to_view().await;
+            let session_view_str = serde_json::to_string(&session_view)?;
+
+            file.write_all(session_view_str.as_bytes()).await?;
         }
 
         Ok(())
+    }
+
+    // 新增：从文件加载单个会话
+    async fn load_chat_session_from_file(
+        &self,
+        file_path: PathBuf,
+        config: &AgentConfig,
+        embedding_config: &Option<EmbeddingConfig>,
+        document_manager: &Option<DocumentManager>,
+    ) -> Result<(String, ChatSession), StorageError> {
+        let file_name = file_path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .ok_or_else(|| StorageError::Other("无效的文件名".to_string()))?;
+
+        let session_id = file_name.to_string().replace(".json", "");
+        let json_file = fs::read(&file_path).await?;
+        let chat_view = serde_json::from_slice::<ChatSessionView>(&json_file)?;
+
+        let session = ChatSession::from_view(
+            chat_view,
+            config.clone(),
+            embedding_config.clone(),
+            document_manager.clone(),
+        )
+        .await
+        .map_err(|e| StorageError::Other(format!("无法反序列化聊天视图: {}", e)))?;
+
+        Ok((session_id, session))
+    }
+
+    // 新增：加载单个用户的所有会话
+    async fn load_user_sessions(
+        &self,
+        user_dir: PathBuf,
+        config: &AgentConfig,
+        embedding_config: &Option<EmbeddingConfig>,
+        document_manager: &Option<DocumentManager>,
+    ) -> Result<(UserID, UserChatSessions), StorageError> {
+        let user_id = user_dir
+            .file_name()
+            .and_then(|name| name.to_str())
+            .ok_or_else(|| StorageError::Other("无效的用户目录名".to_string()))?;
+
+        let user_id = UserID::from(user_id);
+        let mut user_sessions = UserChatSessions::new();
+        let mut files = fs::read_dir(&user_dir).await?;
+
+        while let Ok(Some(entry)) = files.next_entry().await {
+            let file_path = entry.path();
+
+            if !file_path.is_file()
+                || file_path.extension().and_then(|ext| ext.to_str()) != Some("json")
+            {
+                continue;
+            }
+
+            match self
+                .load_chat_session_from_file(file_path, config, embedding_config, document_manager)
+                .await
+            {
+                Ok((session_id, session)) => {
+                    user_sessions.insert(session_id, session);
+                }
+                Err(e) => {
+                    tracing::warn!("加载会话文件失败: {}", e);
+                    continue;
+                }
+            }
+        }
+
+        tracing::info!(
+            "加载用户{}的会话完成, 会话数量: {}",
+            user_id,
+            user_sessions.len()
+        );
+
+        Ok((user_id, user_sessions))
     }
 }
 
@@ -65,7 +148,47 @@ impl Storage for FileStorage {
         Ok(())
     }
 
-    async fn load(&self) -> Result<(), StorageError> {
-        todo!()
+    async fn load(
+        &self,
+        sessions: &Sessions,
+        config: AgentConfig,
+        embedding_config: Option<EmbeddingConfig>,
+        document_manager: Option<DocumentManager>,
+    ) -> Result<(), StorageError> {
+        let sessions_dir = Path::new(&self.base_path).join("sessions");
+
+        // 确保会话目录存在
+        if !sessions_dir.exists() {
+            return Ok(());
+        }
+
+        let mut user_dirs = fs::read_dir(&sessions_dir).await?;
+
+        while let Ok(Some(entry)) = user_dirs.next_entry().await {
+            let user_dir = entry.path();
+
+            if !user_dir.is_dir() {
+                continue;
+            }
+
+            match self
+                .load_user_sessions(user_dir, &config, &embedding_config, &document_manager)
+                .await
+            {
+                Ok((user_id, user_sessions)) => {
+                    sessions.add_user_session(user_id, user_sessions).await;
+                }
+                Err(e) => {
+                    tracing::warn!("加载用户会话失败: {}", e);
+                    continue;
+                }
+            }
+        }
+
+        tracing::info!(
+            "加载所有用户会话完成, 共加载{}个会话",
+            sessions.capacity().await
+        );
+        Ok(())
     }
 }

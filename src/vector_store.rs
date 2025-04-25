@@ -9,6 +9,7 @@ use qdrant_client::qdrant::{
 use rig::OneOrMany;
 use rig::embeddings::{Embedding, EmbeddingModel, EmbeddingsBuilder};
 use rig::vector_store::VectorStoreIndex;
+use rig::vector_store::in_memory_store::{InMemoryVectorIndex, InMemoryVectorStore};
 use rig_qdrant::QdrantVectorStore;
 use tracing::info;
 
@@ -18,8 +19,6 @@ use tracing::info;
 pub struct VectorStoreConfig {
     /// Qdrant集合名称
     collection_name: String,
-    /// Qdrant服务器URL
-    qdrant_url: String,
     /// 向量维度
     dimensions: u64,
 }
@@ -29,7 +28,6 @@ impl VectorStoreConfig {
     ///
     /// # 参数
     /// * `collection_name` - Qdrant集合名称
-    /// * `qdrant_url` - Qdrant服务器URL
     /// * `dimensions` - 向量维度
     ///
     /// # 返回值
@@ -45,10 +43,9 @@ impl VectorStoreConfig {
     ///     1536,
     /// );
     /// ```
-    pub fn new(collection_name: String, qdrant_url: String, dimensions: u64) -> Self {
+    pub fn new(collection_name: String, dimensions: u64) -> Self {
         Self {
             collection_name,
-            qdrant_url,
             dimensions,
         }
     }
@@ -116,32 +113,32 @@ pub async fn initialize_vector_store(
     }
 
     // 创建Qdrant客户端
-    let client = Qdrant::from_url(config.qdrant_url.as_str())
-        .skip_compatibility_check()
-        .build()?;
+    // let client = Qdrant::from_url(config.qdrant_url.as_str())
+    //     .skip_compatibility_check()
+    //     .build()?;
 
-    // 检查集合是否存在，不存在则创建
-    if !client
-        .collection_exists(config.collection_name.clone())
-        .await?
-    {
-        client
-            .create_collection(
-                CreateCollectionBuilder::new(config.collection_name.clone()).vectors_config(
-                    VectorParamsBuilder::new(config.dimensions, Distance::Cosine),
-                ),
-            )
-            .await?;
-    }
+    // // 检查集合是否存在，不存在则创建
+    // if !client
+    //     .collection_exists(config.collection_name.clone())
+    //     .await?
+    // {
+    //     client
+    //         .create_collection(
+    //             CreateCollectionBuilder::new(config.collection_name.clone()).vectors_config(
+    //                 VectorParamsBuilder::new(config.dimensions, Distance::Cosine),
+    //             ),
+    //         )
+    //         .await?;
+    // }
 
-    // 配置查询参数
-    let query_params = QueryPointsBuilder::new(config.collection_name.clone()).with_payload(true);
+    // // 配置查询参数
+    // let query_params = QueryPointsBuilder::new(config.collection_name.clone()).with_payload(true);
 
-    // 创建向量存储
-    let vector_store = QdrantVectorStore::new(client, model, query_params.build());
+    // // 创建向量存储
+    // let vector_store = QdrantVectorStore::new(client, model, query_params.build());
 
-    // 插入文档
-    vector_store.insert_documents(documents).await?;
+    let vector_store = InMemoryVectorStore::from_documents(documents);
+    let index = vector_store.index(model);
 
-    Ok(vector_store)
+    Ok(index)
 }
