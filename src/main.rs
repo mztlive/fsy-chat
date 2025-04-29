@@ -1,12 +1,14 @@
 mod agent;
 mod chat;
 mod config;
+mod configs;
 mod document_loader;
 mod errors;
 mod models;
 mod tools;
 mod vector_store;
 mod web;
+mod providers;
 
 use crate::config::Config;
 use crate::document_loader::DocumentManager;

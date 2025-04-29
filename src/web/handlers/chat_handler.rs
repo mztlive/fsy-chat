@@ -1,5 +1,5 @@
 use axum::{
-    Json, Router,
+    Json, Router, debug_handler,
     extract::{Path, Query, State},
     response::{
         IntoResponse,
