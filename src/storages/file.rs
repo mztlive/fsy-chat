@@ -5,7 +5,6 @@ use rig::streaming::StreamingCompletionModel;
 use tokio::fs::{self, File};
 use tokio::io::AsyncWriteExt;
 
-use crate::agent::{AgentConfig, EmbeddingConfig};
 use crate::chat::ChatSessionView;
 use crate::document_loader::DocumentManager;
 use crate::kernel::Kernel;

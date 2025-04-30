@@ -1,4 +1,3 @@
-mod agent;
 mod chat;
 mod client;
 mod config;

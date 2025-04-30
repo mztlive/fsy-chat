@@ -1,11 +1,6 @@
 use rig::streaming::StreamingCompletionModel;
 
-use crate::{
-    agent::{AgentConfig, EmbeddingConfig},
-    document_loader::DocumentManager,
-    kernel::Kernel,
-    session_manager::Sessions,
-};
+use crate::{document_loader::DocumentManager, kernel::Kernel};
 
 #[derive(Debug, thiserror::Error)]
 pub enum StorageError {

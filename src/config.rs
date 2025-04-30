@@ -1,7 +1,31 @@
 use serde::Deserialize;
 use std::path::PathBuf;
 
-use crate::agent::{AgentConfig, EmbeddingConfig};
+/// 代理配置结构体
+///
+/// 包含初始化AI代理所需的基本配置信息
+#[derive(Debug, Clone, Deserialize)]
+pub struct AgentConfig {
+    /// OpenAI兼容API的密钥
+    pub api_key: String,
+    /// 代理的前置指令文本
+    pub preamble: String,
+    /// 使用的聊天模型名称
+    pub chat_model: String,
+}
+
+/// 嵌入模型配置结构体
+///
+/// 包含初始化向量嵌入和检索所需的配置信息
+#[derive(Debug, Clone, Deserialize)]
+pub struct EmbeddingConfig {
+    /// OpenAI兼容API的密钥
+    pub api_key: String,
+    /// 使用的嵌入模型名称
+    pub model: String,
+    /// 嵌入向量的维度
+    pub dimensions: usize,
+}
 
 /// 应用程序配置结构体
 ///
