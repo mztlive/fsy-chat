@@ -1,7 +1,7 @@
 use rig::{completion::CompletionError, loaders::file::FileLoaderError, tool::ToolError};
 use thiserror::Error;
 
-use crate::{chat::SessionMessage, session_manager::errors::SessionManagerError};
+use crate::chat::SessionMessage;
 
 /// 应用程序错误类型
 ///

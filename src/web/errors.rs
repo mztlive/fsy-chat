@@ -2,7 +2,7 @@ use axum::{Json, response::IntoResponse};
 use serde::Serialize;
 use thiserror::Error;
 
-use crate::{errors::AppError, session_manager::errors::SessionManagerError};
+use crate::errors::AppError;
 
 #[derive(Debug, Error)]
 pub enum WebError {
@@ -14,9 +14,6 @@ pub enum WebError {
 
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
-
-    #[error("Session manager error: {0}")]
-    SessionManagerError(#[from] SessionManagerError),
 }
 
 #[derive(Debug, Serialize)]

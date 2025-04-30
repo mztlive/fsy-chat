@@ -8,7 +8,7 @@ use crate::{
     config::Config,
     document_loader::DocumentManager,
     errors::{AppError, AppResult},
-    session_manager::{ChatSessionManager, UserID},
+    session_manager::{Sessions, UserID},
     vector_store::VectorStoreManager,
 };
 
@@ -18,7 +18,7 @@ pub struct Kernel {
     doc_manager: DocumentManager,
     client: Client,
     vector_store_manager: VectorStoreManager,
-    chat_session_manager: ChatSessionManager<openai::CompletionModel>,
+    sessions: Sessions<openai::CompletionModel>,
 }
 
 impl Kernel {
@@ -50,12 +50,8 @@ impl Kernel {
             doc_manager,
             client,
             vector_store_manager: store_manager,
-            chat_session_manager: ChatSessionManager::new(),
+            sessions: Sessions::new(),
         }
-    }
-
-    pub fn session_manager(&self) -> &ChatSessionManager<openai::CompletionModel> {
-        &self.chat_session_manager
     }
 
     pub fn config(&self) -> &Config {
@@ -102,8 +98,7 @@ impl Kernel {
 
         let chat_session = ChatSession::from_view(chat_view, agent).await?;
 
-        self.chat_session_manager
-            .sessions()
+        self.sessions
             .add_session(user_id, session_id, chat_session)
             .await;
 
@@ -119,12 +114,31 @@ impl Kernel {
     ) -> AppResult<(ChatSession<openai::CompletionModel>, String)> {
         let agent = self.create_agent(&preamble, doc_category.as_deref()).await;
 
-        let (session, session_id) = self
-            .chat_session_manager
-            .create_session(user_id, agent, preamble, doc_category)
-            .await
-            .map_err(|e| AppError::Other(e.to_string()))?;
+        let session_id = uuid::Uuid::new_v4().to_string();
+
+        // 创建新会话
+        let session = ChatSession::new(agent, preamble, doc_category).await?;
+
+        self.sessions
+            .add_session(user_id, session_id.clone(), session.clone())
+            .await;
 
         Ok((session, session_id))
+    }
+
+    pub async fn get_session(
+        &self,
+        session_id: &str,
+    ) -> Option<ChatSession<openai::CompletionModel>> {
+        self.sessions.get_session(session_id).await
+    }
+
+    pub fn sessions(&self) -> &Sessions<openai::CompletionModel> {
+        &self.sessions
+    }
+
+    pub async fn remove_session(&self, user_id: &UserID, session_id: &str) -> AppResult<()> {
+        self.sessions.remove_session(user_id, session_id).await;
+        Ok(())
     }
 }

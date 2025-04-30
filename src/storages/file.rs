@@ -114,7 +114,7 @@ impl Storage for FileStorage {
         let sessions_dir = Path::new(&self.base_path).join("sessions");
         tokio::fs::create_dir_all(&sessions_dir).await?;
 
-        let sessions = kernel.session_manager().sessions();
+        let sessions = kernel.sessions();
 
         for user_id in sessions.user_ids().await {
             // 创建用户的目录
@@ -143,7 +143,7 @@ impl Storage for FileStorage {
         }
 
         let mut user_dirs = fs::read_dir(&sessions_dir).await?;
-        let sessions = kernel.session_manager().sessions();
+        let sessions = kernel.sessions();
 
         while let Ok(Some(entry)) = user_dirs.next_entry().await {
             let user_dir = entry.path();

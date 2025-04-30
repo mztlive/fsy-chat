@@ -55,7 +55,6 @@ pub async fn post_message(
 ) -> ApiResult<()> {
     let mut session = app_state
         .kernel()
-        .session_manager()
         .get_session(&session_id)
         .await
         .ok_or(WebError::SessionNotFound)?;
@@ -74,7 +73,6 @@ pub async fn post_message(
 pub async fn session_history(State(app_state): State<AppState>) -> ApiResult<Vec<SessionHistory>> {
     let session = app_state
         .kernel()
-        .session_manager()
         .sessions()
         .get_session_history(&DEFAULT_USER_ID.into())
         .await;
@@ -88,7 +86,6 @@ pub async fn message_history(
 ) -> ApiResult<Vec<Message>> {
     let session = app_state
         .kernel()
-        .session_manager()
         .get_session(&session_id)
         .await
         .ok_or(WebError::SessionNotFound)?;
@@ -114,7 +111,6 @@ pub async fn remove_session(
 ) -> ApiResult<()> {
     app_state
         .kernel()
-        .session_manager()
         .remove_session(&DEFAULT_USER_ID.into(), &session_id)
         .await?;
 
@@ -126,11 +122,7 @@ pub async fn chat_sse_handler(
     State(app_state): State<AppState>,
     Path(session_id): Path<String>,
 ) -> axum::response::Response<axum::body::Body> {
-    let session = app_state
-        .kernel()
-        .session_manager()
-        .get_session(&session_id)
-        .await;
+    let session = app_state.kernel().get_session(&session_id).await;
 
     match session {
         Some(session) => {
