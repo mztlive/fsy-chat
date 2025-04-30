@@ -1,19 +1,13 @@
+use crate::errors::{AppError, AppResult};
 use futures_util::stream::StreamExt;
 use rig::agent::Agent;
-use rig::completion::Chat;
+use rig::completion::{Chat, CompletionModel};
 use rig::message::Message;
-use rig::providers::openai::CompletionModel;
-use rig::streaming::{StreamingChat, StreamingChoice};
+use rig::streaming::{StreamingChat, StreamingChoice, StreamingCompletionModel};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::{RwLock, broadcast};
 use tokio::time::{Duration, Instant};
-use uuid::Uuid;
-
-use crate::agent::AgentConfig;
-use crate::agent::EmbeddingConfig;
-use crate::document_loader::DocumentManager;
-use crate::errors::{AppError, AppResult};
 
 /// 会话消息结构体
 ///
@@ -30,16 +24,24 @@ pub struct SessionMessage {
 ///
 /// 管理与AI代理的对话，包含历史记录和状态信息
 #[derive(Clone)]
-pub struct ChatSession {
+pub struct ChatSession<M: StreamingCompletionModel> {
+    /// 文档类别
+    doc_category: Option<String>,
+    /// 会话预设
+    preamble: String,
+    /// 会话摘要
     summary: Arc<RwLock<String>>,
-    agent: Arc<Agent<CompletionModel>>,
+    /// 代理
+    agent: Arc<Agent<M>>,
+    /// 会话历史
     history: Arc<RwLock<Vec<Message>>>,
+    /// 最后一条消息时间
     last_message_at: Arc<RwLock<Option<Instant>>>,
     /// 会话消息发送器，用于向会话流发送用户查询
     session_tx: broadcast::Sender<SessionMessage>,
 }
 
-impl ChatSession {
+impl<M: StreamingCompletionModel> ChatSession<M> {
     /// 将会话转换为可序列化的视图对象
     ///
     /// # 返回值
@@ -59,6 +61,8 @@ impl ChatSession {
             summary: self.summary().await,
             history: self.get_history().await,
             last_message_at: self.last_message_at().await.elapsed().as_millis() as i64,
+            preamble: self.preamble.clone(),
+            doc_category: self.doc_category.clone(),
         }
     }
 
@@ -89,13 +93,8 @@ impl ChatSession {
     ///     Ok(session)
     /// }
     /// ```
-    pub async fn from_view(
-        view: ChatSessionView,
-        config: AgentConfig,
-        embedding_config: Option<EmbeddingConfig>,
-        document_manager: Option<DocumentManager>,
-    ) -> AppResult<Self> {
-        let mut session = Self::new(config, embedding_config, document_manager).await?;
+    pub async fn from_view(view: ChatSessionView, agent: Agent<M>) -> AppResult<Self> {
+        let mut session = Self::new(agent, view.preamble, view.doc_category).await?;
 
         session.set_history(view.history).await;
         *session.summary.write().await = view.summary;
@@ -132,15 +131,15 @@ impl ChatSession {
     /// }
     /// ```
     pub async fn new(
-        config: AgentConfig,
-        embedding_config: Option<EmbeddingConfig>,
-        document_manager: Option<DocumentManager>,
+        agent: Agent<M>,
+        preamble: String,
+        doc_category: Option<String>,
     ) -> AppResult<Self> {
-        let agent = crate::agent::build_agent(config, embedding_config, document_manager).await?;
-
         let (session_tx, _) = broadcast::channel(100);
 
         Ok(Self {
+            doc_category,
+            preamble,
             summary: Arc::new(RwLock::new(String::from("新会话"))),
             agent: Arc::new(agent),
             history: Arc::new(RwLock::new(Vec::new())),
@@ -412,4 +411,8 @@ pub struct ChatSessionView {
     pub history: Vec<Message>,
     /// 最后一条消息的时间戳（毫秒）
     pub last_message_at: i64,
+    /// 会话预设
+    pub preamble: String,
+    /// 文档类别
+    pub doc_category: Option<String>,
 }

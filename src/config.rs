@@ -42,8 +42,8 @@ use crate::agent::{AgentConfig, EmbeddingConfig};
 pub struct Config {
     /// 代理配置
     pub agent: AgentConfig,
-    /// 嵌入模型配置，可选
-    pub embedding: Option<EmbeddingConfig>,
+    /// 嵌入模型配置
+    pub embedding: EmbeddingConfig,
     /// 文档配置
     pub document: DocumentConfig,
 }

@@ -2,9 +2,7 @@ use axum::{Json, response::IntoResponse};
 use serde::Serialize;
 use thiserror::Error;
 
-use crate::errors::AppError;
-
-use super::session_manager::errors::SessionManagerError;
+use crate::{errors::AppError, session_manager::errors::SessionManagerError};
 
 #[derive(Debug, Error)]
 pub enum WebError {

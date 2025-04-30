@@ -15,10 +15,12 @@ use std::convert::Infallible;
 use std::time::Duration;
 use uuid::Uuid;
 
-use crate::web::{
-    app_state::AppState,
-    errors::{ApiResponse, ApiResult, WebError},
+use crate::{
     session_manager::SessionHistory,
+    web::{
+        app_state::AppState,
+        errors::{ApiResponse, ApiResult, WebError},
+    },
 };
 
 const DEFAULT_USER_ID: &str = "default";
@@ -52,7 +54,8 @@ pub async fn post_message(
     Json(request): Json<ChatRequest>,
 ) -> ApiResult<()> {
     let mut session = app_state
-        .chat_session_manager
+        .kernel()
+        .session_manager()
         .get_session(&session_id)
         .await
         .ok_or(WebError::SessionNotFound)?;
@@ -70,7 +73,8 @@ pub async fn post_message(
 
 pub async fn session_history(State(app_state): State<AppState>) -> ApiResult<Vec<SessionHistory>> {
     let session = app_state
-        .chat_session_manager
+        .kernel()
+        .session_manager()
         .sessions()
         .get_session_history(&DEFAULT_USER_ID.into())
         .await;
@@ -83,7 +87,8 @@ pub async fn message_history(
     Path(session_id): Path<String>,
 ) -> ApiResult<Vec<Message>> {
     let session = app_state
-        .chat_session_manager
+        .kernel()
+        .session_manager()
         .get_session(&session_id)
         .await
         .ok_or(WebError::SessionNotFound)?;
@@ -95,16 +100,17 @@ pub async fn create_session(
     State(app_state): State<AppState>,
     Query(request): Query<NewSSEQuery>,
 ) -> ApiResult<NewSSEResponse> {
-    let agent_config = app_state.config.agent.clone();
-    let embedding_config = app_state.config.embedding.clone();
-    let document_manager = app_state.doc_manager.clone();
+    let agent_config = app_state.kernel().config().agent.clone();
+    let embedding_config = app_state.kernel().config().embedding.clone();
+    let document_manager = app_state.kernel().doc_manager().clone();
 
     let (_, session_id) = app_state
-        .chat_session_manager
+        .kernel()
+        .session_manager()
         .create_session(
             DEFAULT_USER_ID.into(),
             agent_config,
-            embedding_config,
+            Some(embedding_config),
             Some(document_manager),
         )
         .await?;
@@ -117,7 +123,8 @@ pub async fn remove_session(
     Path(session_id): Path<String>,
 ) -> ApiResult<()> {
     app_state
-        .chat_session_manager
+        .kernel()
+        .session_manager()
         .remove_session(&DEFAULT_USER_ID.into(), &session_id)
         .await?;
 
@@ -130,7 +137,8 @@ pub async fn chat_sse_handler(
     Path(session_id): Path<String>,
 ) -> axum::response::Response<axum::body::Body> {
     let session = app_state
-        .chat_session_manager
+        .kernel()
+        .session_manager()
         .get_session(&session_id)
         .await;
 
@@ -180,7 +188,7 @@ pub async fn get_all_document_category(
     State(app_state): State<AppState>,
 ) -> ApiResult<Vec<String>> {
     Ok(ApiResponse::success(
-        app_state.doc_manager.get_categories().await,
+        app_state.kernel().doc_manager().get_categories().await,
     ))
 }
 

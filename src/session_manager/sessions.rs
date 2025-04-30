@@ -1,6 +1,7 @@
 use std::{collections::HashMap, fmt::Display, ops::Deref, path::Path, sync::Arc};
 
 use futures_util::{StreamExt, future::join_all, stream};
+use rig::streaming::StreamingCompletionModel;
 use serde::Serialize;
 use tokio::sync::Mutex;
 
@@ -51,11 +52,11 @@ impl AsRef<Path> for UserID {
 
 /// 聊天会话集合，管理单个用户的所有聊天会话
 #[derive(Clone)]
-pub struct UserChatSessions {
-    inner: HashMap<String, ChatSession>,
+pub struct UserChatSessions<M: StreamingCompletionModel> {
+    inner: HashMap<String, ChatSession<M>>,
 }
 
-impl UserChatSessions {
+impl<M: StreamingCompletionModel> UserChatSessions<M> {
     /// 创建一个新的聊天会话集合
     pub fn new() -> Self {
         Self {
@@ -70,7 +71,7 @@ impl UserChatSessions {
     ///
     /// # 返回
     /// * `Option<&ChatSession>` - 如果存在则返回会话引用，否则返回None
-    pub fn get(&self, session_id: &String) -> Option<&ChatSession> {
+    pub fn get(&self, session_id: &String) -> Option<&ChatSession<M>> {
         self.inner.get(session_id)
     }
 
@@ -79,7 +80,7 @@ impl UserChatSessions {
     /// # 参数
     /// * `session_id` - 会话ID
     /// * `session` - 聊天会话对象
-    pub fn insert(&mut self, session_id: String, session: ChatSession) {
+    pub fn insert(&mut self, session_id: String, session: ChatSession<M>) {
         self.inner.insert(session_id, session);
     }
 
@@ -90,7 +91,7 @@ impl UserChatSessions {
     ///
     /// # 返回
     /// * `Option<ChatSession>` - 如果存在则返回被移除的会话，否则返回None
-    pub fn remove(&mut self, session_id: &String) -> Option<ChatSession> {
+    pub fn remove(&mut self, session_id: &String) -> Option<ChatSession<M>> {
         self.inner.remove(session_id)
     }
 
@@ -103,8 +104,8 @@ impl UserChatSessions {
     }
 }
 
-impl Deref for UserChatSessions {
-    type Target = HashMap<String, ChatSession>;
+impl<M: StreamingCompletionModel> Deref for UserChatSessions<M> {
+    type Target = HashMap<String, ChatSession<M>>;
 
     fn deref(&self) -> &Self::Target {
         &self.inner
@@ -113,15 +114,15 @@ impl Deref for UserChatSessions {
 
 /// 全局会话管理器，管理所有用户的聊天会话
 #[derive(Clone)]
-pub struct Sessions {
+pub struct Sessions<M: StreamingCompletionModel> {
     /// 按用户ID组织的会话集合
-    grouped: Arc<Mutex<HashMap<UserID, UserChatSessions>>>,
+    grouped: Arc<Mutex<HashMap<UserID, UserChatSessions<M>>>>,
 
     /// 所有会话的快速索引，不区分用户ID，用于通过session_id快速获取ChatSession
-    index: Arc<Mutex<UserChatSessions>>,
+    index: Arc<Mutex<UserChatSessions<M>>>,
 }
 
-impl Sessions {
+impl<M: StreamingCompletionModel> Sessions<M> {
     /// 创建一个新的全局会话管理器
     pub fn new() -> Self {
         Self {
@@ -130,7 +131,7 @@ impl Sessions {
         }
     }
 
-    pub async fn add_user_session(&self, user_id: UserID, sessions: UserChatSessions) {
+    pub async fn add_user_session(&self, user_id: UserID, sessions: UserChatSessions<M>) {
         let mut guard = self.grouped.lock().await;
         guard.insert(user_id, sessions.clone());
 
@@ -149,7 +150,7 @@ impl Sessions {
     ///
     /// # 返回
     /// * `Option<ChatSessions>` - 如果存在则返回用户的会话集合，否则返回None
-    pub async fn get_sessions(&self, user_id: &UserID) -> Option<UserChatSessions> {
+    pub async fn get_sessions(&self, user_id: &UserID) -> Option<UserChatSessions<M>> {
         self.grouped.lock().await.get(user_id).cloned()
     }
 
@@ -168,7 +169,7 @@ impl Sessions {
     ///
     /// # 返回
     /// * `Option<ChatSession>` - 如果存在则返回会话，否则返回None
-    pub async fn get_session(&self, session_id: impl Into<String>) -> Option<ChatSession> {
+    pub async fn get_session(&self, session_id: impl Into<String>) -> Option<ChatSession<M>> {
         self.index.lock().await.get(&session_id.into()).cloned()
     }
 
@@ -182,7 +183,7 @@ impl Sessions {
         &self,
         user_id: UserID,
         session_id: impl Into<String>,
-        session: ChatSession,
+        session: ChatSession<M>,
     ) {
         let mut guard = self.grouped.lock().await;
         let sessions = guard.entry(user_id).or_insert(UserChatSessions::new());
@@ -204,7 +205,7 @@ impl Sessions {
         &self,
         user_id: &UserID,
         session_id: impl Into<String>,
-    ) -> Option<ChatSession> {
+    ) -> Option<ChatSession<M>> {
         let session_id = session_id.into();
 
         let mut guard = self.grouped.lock().await;

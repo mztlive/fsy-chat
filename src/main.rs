@@ -4,23 +4,24 @@ mod client;
 mod config;
 mod document_loader;
 mod errors;
+mod kernel;
 mod models;
+mod session_manager;
 mod tools;
 mod vector_store;
 mod web;
 
 use crate::config::Config;
-use crate::document_loader::DocumentManager;
 use crate::errors::AppResult;
-use crate::web::storage::Storage;
+use crate::session_manager::storages::storage::Storage;
 use clap::Parser;
+use kernel::Kernel;
+use session_manager::storages::file::FileStorage;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use tracing::{Level, info};
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
-use vector_store::VectorStoreManager;
 use web::AppState;
-use web::file::FileStorage;
 
 /// FSY AI聊天应用程序
 #[derive(Parser, Debug)]
@@ -62,38 +63,6 @@ fn load_config(path: &PathBuf) -> AppResult<Config> {
     Ok(config)
 }
 
-/// 初始化文档管理器
-///
-/// 根据配置中的文档类目信息，加载所有文档
-///
-/// # 参数
-/// * `config` - 应用配置
-///
-/// # 返回值
-/// 返回初始化好的文档管理器，如果初始化失败则返回错误
-///
-/// # 示例
-/// ```
-/// use fsy_ai_chat::config::Config;
-///
-/// async fn example(config: Config) -> Result<(), Box<dyn std::error::Error>> {
-///     let doc_manager = initialize_document_manager(&config).await?;
-///     println!("文档管理器初始化成功");
-///     Ok(())
-/// }
-/// ```
-async fn initialize_document_manager(config: &Config) -> AppResult<DocumentManager> {
-    let mut manager = DocumentManager::new();
-
-    for category in &config.document.categories {
-        manager
-            .load_category(category.clone(), &category.directory)
-            .await?;
-    }
-
-    Ok(manager)
-}
-
 /// 定期持久化聊天会话
 ///
 /// 启动一个后台任务，定期将聊天会话状态保存到文件系统
@@ -109,15 +78,14 @@ async fn initialize_document_manager(config: &Config) -> AppResult<DocumentManag
 ///     dump_chat_sessions(app_state).await;
 /// }
 /// ```
-async fn dump_chat_sessions(app_state: AppState) {
-    let sessions = app_state.chat_session_manager.sessions();
+async fn dump_chat_sessions(app_state: &Kernel) {
     let file_storage = FileStorage::new("./".to_string());
 
     info!("启动聊天会话持久化任务");
     // 创建一个无限循环，每5秒执行一次持久化操作
     loop {
         info!("开始持久化聊天会话");
-        let result = file_storage.persistence(&sessions).await;
+        let result = file_storage.persistence(app_state).await;
         match result {
             Ok(_) => info!("聊天会话持久化成功"),
             Err(e) => tracing::error!("聊天会话持久化失败: {}", e),
@@ -143,17 +111,11 @@ async fn dump_chat_sessions(app_state: AppState) {
 ///     load_chat_sessions(app_state).await;
 /// }
 /// ```
-async fn load_chat_sessions(app_state: AppState) {
+async fn load_chat_sessions(app_state: &Kernel) {
     let file_storage = FileStorage::new("./".to_string());
-    let sessions = app_state.chat_session_manager.sessions();
 
     file_storage
-        .load(
-            &sessions,
-            app_state.config.agent.clone(),
-            app_state.config.embedding.clone(),
-            Some(app_state.doc_manager.clone()),
-        )
+        .load(app_state)
         .await
         .expect("加载聊天会话失败");
 
@@ -185,24 +147,21 @@ async fn load_chat_sessions(app_state: AppState) {
 ///     Ok(())
 /// }
 /// ```
-async fn start_web_server(
-    config: Config,
-    doc_manager: DocumentManager,
-    port: u16,
-) -> AppResult<()> {
+async fn start_web_server(config: Config, port: u16) -> AppResult<()> {
     info!("初始化Web服务器");
 
     let client = client::create_client(&config.agent.api_key);
 
-    // 初始化聊天会话管理器
-    let app_state = AppState::new(config, doc_manager, client).await;
+    let kernel = Kernel::new(config, client).await;
 
-    load_chat_sessions(app_state.clone()).await;
+    // 初始化聊天会话管理器
+    let app_state = AppState::new(kernel.clone());
+
+    load_chat_sessions(&kernel).await;
 
     info!("启动聊天会话持久化后台任务");
-    let app_state_clone = app_state.clone();
     tokio::spawn(async move {
-        dump_chat_sessions(app_state_clone).await;
+        dump_chat_sessions(&kernel).await;
     });
 
     // 创建路由
@@ -249,11 +208,7 @@ async fn main() -> AppResult<()> {
     let config = load_config(&args.config)?;
     info!("配置加载完成");
 
-    // 初始化文档管理器
-    let doc_manager = initialize_document_manager(&config).await?;
-    info!("文档管理器初始化完成");
-
-    start_web_server(config, doc_manager, args.port).await?;
+    start_web_server(config, args.port).await?;
 
     Ok(())
 }
