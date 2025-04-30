@@ -234,4 +234,8 @@ impl DocumentManager {
             .cloned()
             .collect()
     }
+
+    pub async fn grouped_documents(&self) -> HashMap<String, Vec<String>> {
+        self.documents.lock().await.clone()
+    }
 }

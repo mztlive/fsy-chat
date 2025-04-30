@@ -104,7 +104,6 @@ pub async fn create_session(
         .create_session(
             DEFAULT_USER_ID.into(),
             agent_config,
-            request.category,
             embedding_config,
             Some(document_manager),
         )

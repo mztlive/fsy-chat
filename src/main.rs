@@ -1,14 +1,13 @@
 mod agent;
 mod chat;
+mod client;
 mod config;
-mod configs;
 mod document_loader;
 mod errors;
 mod models;
 mod tools;
 mod vector_store;
 mod web;
-mod providers;
 
 use crate::config::Config;
 use crate::document_loader::DocumentManager;
@@ -19,6 +18,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use tracing::{Level, info};
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
+use vector_store::VectorStoreManager;
 use web::AppState;
 use web::file::FileStorage;
 
@@ -29,10 +29,6 @@ struct Args {
     /// 配置文件路径
     #[arg(short, long, default_value = "config.toml")]
     config: PathBuf,
-
-    /// 运行模式: web或cli
-    #[arg(short, long, default_value = "cli")]
-    mode: String,
 
     /// Web服务器端口
     #[arg(short, long, default_value = "3000")]
@@ -195,8 +191,11 @@ async fn start_web_server(
     port: u16,
 ) -> AppResult<()> {
     info!("初始化Web服务器");
+
+    let client = client::create_client(&config.agent.api_key);
+
     // 初始化聊天会话管理器
-    let app_state = AppState::new(config, doc_manager);
+    let app_state = AppState::new(config, doc_manager, client).await;
 
     load_chat_sessions(app_state.clone()).await;
 
@@ -254,18 +253,7 @@ async fn main() -> AppResult<()> {
     let doc_manager = initialize_document_manager(&config).await?;
     info!("文档管理器初始化完成");
 
-    // 根据运行模式启动服务
-    match args.mode.as_str() {
-        "web" => {
-            info!("以Web模式启动服务");
-            start_web_server(config, doc_manager, args.port).await?;
-        }
-        _ => {
-            // CLI模式
-            info!("以CLI模式启动服务");
-            chat::cli::start_cli_session(config, doc_manager).await;
-        }
-    }
+    start_web_server(config, doc_manager, args.port).await?;
 
     Ok(())
 }

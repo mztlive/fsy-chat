@@ -23,15 +23,13 @@ impl ChatSessionManager {
         &self,
         user_id: UserID,
         agent_config: AgentConfig,
-        category: Option<String>,
         embedding_config: Option<EmbeddingConfig>,
         document_manager: Option<DocumentManager>,
     ) -> std::result::Result<(ChatSession, String), SessionManagerError> {
         let session_id = uuid::Uuid::new_v4().to_string();
 
         // 创建新会话
-        let session =
-            ChatSession::new(agent_config, embedding_config, document_manager, category).await?;
+        let session = ChatSession::new(agent_config, embedding_config, document_manager).await?;
 
         self.sessions
             .add_session(user_id, session_id.clone(), session.clone())

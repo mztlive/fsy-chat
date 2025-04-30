@@ -37,7 +37,6 @@ pub struct ChatSession {
     last_message_at: Arc<RwLock<Option<Instant>>>,
     /// 会话消息发送器，用于向会话流发送用户查询
     session_tx: broadcast::Sender<SessionMessage>,
-    doc_category: Option<String>,
 }
 
 impl ChatSession {
@@ -60,7 +59,6 @@ impl ChatSession {
             summary: self.summary().await,
             history: self.get_history().await,
             last_message_at: self.last_message_at().await.elapsed().as_millis() as i64,
-            doc_category: self.doc_category.clone(),
         }
     }
 
@@ -97,20 +95,12 @@ impl ChatSession {
         embedding_config: Option<EmbeddingConfig>,
         document_manager: Option<DocumentManager>,
     ) -> AppResult<Self> {
-        let mut session = Self::new(
-            config,
-            embedding_config,
-            document_manager,
-            view.doc_category.clone(),
-        )
-        .await?;
+        let mut session = Self::new(config, embedding_config, document_manager).await?;
 
         session.set_history(view.history).await;
         *session.summary.write().await = view.summary;
         *session.last_message_at.write().await =
             Some(Instant::now() - Duration::from_millis(view.last_message_at as u64));
-
-        session.doc_category = view.doc_category;
 
         Ok(session)
     }
@@ -145,10 +135,8 @@ impl ChatSession {
         config: AgentConfig,
         embedding_config: Option<EmbeddingConfig>,
         document_manager: Option<DocumentManager>,
-        doc_category: Option<String>,
     ) -> AppResult<Self> {
-        let agent =
-            crate::agent::initialize_agent(config, embedding_config, document_manager).await?;
+        let agent = crate::agent::build_agent(config, embedding_config, document_manager).await?;
 
         let (session_tx, _) = broadcast::channel(100);
 
@@ -158,7 +146,6 @@ impl ChatSession {
             history: Arc::new(RwLock::new(Vec::new())),
             last_message_at: Arc::new(RwLock::new(None)),
             session_tx,
-            doc_category,
         })
     }
 
@@ -425,92 +412,4 @@ pub struct ChatSessionView {
     pub history: Vec<Message>,
     /// 最后一条消息的时间戳（毫秒）
     pub last_message_at: i64,
-    /// 文档类别
-    pub doc_category: Option<String>,
-}
-
-/// CLI相关的帮助函数，可供CLI入口使用
-pub mod cli {
-    use super::*;
-    use std::io::{self, Write};
-
-    /// 显示欢迎消息
-    ///
-    /// # 示例
-    /// ```
-    /// use fsy_ai_chat::chat::cli;
-    ///
-    /// fn example() {
-    ///     cli::print_welcome_message();
-    /// }
-    /// ```
-    pub fn print_welcome_message() {
-        println!("欢迎使用AI聊天程序！输入'exit'或'quit'退出程序。");
-    }
-
-    /// 读取用户输入
-    ///
-    /// # 返回值
-    /// 返回用户输入的文本
-    ///
-    /// # 示例
-    /// ```
-    /// use fsy_ai_chat::chat::cli;
-    ///
-    /// fn example() {
-    ///     let user_input = cli::read_user_input();
-    ///     println!("用户输入: {}", user_input);
-    /// }
-    /// ```
-    pub fn read_user_input() -> String {
-        print!("> ");
-        io::stdout().flush().expect("Failed to flush stdout");
-
-        let mut user_input = String::new();
-        io::stdin()
-            .read_line(&mut user_input)
-            .expect("Failed to read line");
-
-        user_input.trim().to_string()
-    }
-
-    /// 启动CLI聊天会话
-    ///
-    /// # 参数
-    /// * `config` - 应用配置
-    /// * `doc_manager` - 文档管理器
-    ///
-    /// # 示例
-    /// ```
-    /// use fsy_ai_chat::chat::cli;
-    /// use fsy_ai_chat::config::Config;
-    /// use fsy_ai_chat::document_loader::DocumentManager;
-    ///
-    /// async fn example(config: Config, doc_manager: DocumentManager) {
-    ///     cli::start_cli_session(config, doc_manager).await;
-    /// }
-    /// ```
-    pub async fn start_cli_session(config: crate::config::Config, doc_manager: DocumentManager) {
-        print_welcome_message();
-
-        let mut session = ChatSession::new(config.agent, config.embedding, Some(doc_manager), None)
-            .await
-            .unwrap();
-
-        let mut receiver = session.subscribe();
-
-        tokio::spawn(async move {
-            while let Ok(message) = receiver.recv().await {
-                print!("{}", message.message);
-                std::io::stdout().flush().unwrap();
-            }
-        });
-
-        loop {
-            let user_input = read_user_input();
-
-            let message_id = Uuid::new_v4().to_string();
-            session.send_message(&user_input, message_id).await.unwrap();
-        }
-    }
 }

@@ -758,7 +758,7 @@ dependencies = [
  "futures-util",
  "qdrant-client",
  "reqwest",
- "rig-core",
+ "rig-core 0.12.0",
  "rig-qdrant",
  "serde",
  "serde_json",
@@ -2057,6 +2057,27 @@ dependencies = [
  "bytes",
  "futures",
  "glob",
+ "mime_guess",
+ "ordered-float",
+ "reqwest",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "rig-core"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed332151c57f658a89fc58cbd274aa6743ae2ad3026a17630ec2bfc77eff96ac"
+dependencies = [
+ "async-stream",
+ "base64",
+ "bytes",
+ "futures",
+ "glob",
  "lopdf",
  "mime_guess",
  "ordered-float",
@@ -2072,9 +2093,9 @@ dependencies = [
 
 [[package]]
 name = "rig-derive"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6308d925fe58abb73c7e93de45bbcf67fb942922520b61d437f26a7a3aef4ea3"
+checksum = "48764dad7d34046f2246528603312376c35db41c2cf6a33e21217130627dae0c"
 dependencies = [
  "convert_case",
  "indoc",
@@ -2091,7 +2112,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a5f9a14ceabed5e03131028b9e04474ea692d66eee0ba35d33a7d1efe2d572f4"
 dependencies = [
  "qdrant-client",
- "rig-core",
+ "rig-core 0.11.1",
  "serde",
  "serde_json",
  "uuid",

@@ -81,7 +81,7 @@ fn create_client(api_key: &str) -> openai::Client {
 ///     Ok(())
 /// }
 /// ```
-pub async fn initialize_agent(
+pub async fn build_agent(
     agent_config: AgentConfig,
     embedding_config: Option<EmbeddingConfig>,
     document_manager: Option<DocumentManager>,
