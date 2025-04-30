@@ -4,8 +4,12 @@ use rig::{
 };
 
 use crate::{
-    config::Config, document_loader::DocumentManager, errors::AppResult,
-    session_manager::ChatSessionManager, vector_store::VectorStoreManager,
+    chat::{ChatSession, ChatSessionView},
+    config::Config,
+    document_loader::DocumentManager,
+    errors::{AppError, AppResult},
+    session_manager::{ChatSessionManager, UserID},
+    vector_store::VectorStoreManager,
 };
 
 #[derive(Clone)]
@@ -84,5 +88,43 @@ impl Kernel {
         }
 
         builder.build()
+    }
+
+    pub async fn add_history(
+        &self,
+        user_id: UserID,
+        session_id: String,
+        chat_view: ChatSessionView,
+    ) -> AppResult<()> {
+        let agent = self
+            .create_agent(&chat_view.preamble, chat_view.doc_category.as_deref())
+            .await;
+
+        let chat_session = ChatSession::from_view(chat_view, agent).await?;
+
+        self.chat_session_manager
+            .sessions()
+            .add_session(user_id, session_id, chat_session)
+            .await;
+
+        Ok(())
+    }
+
+    // 获取或创建会话
+    pub async fn create_session(
+        &self,
+        user_id: UserID,
+        preamble: String,
+        doc_category: Option<String>,
+    ) -> AppResult<(ChatSession<openai::CompletionModel>, String)> {
+        let agent = self.create_agent(&preamble, doc_category.as_deref()).await;
+
+        let (session, session_id) = self
+            .chat_session_manager
+            .create_session(user_id, agent, preamble, doc_category)
+            .await
+            .map_err(|e| AppError::Other(e.to_string()))?;
+
+        Ok((session, session_id))
     }
 }

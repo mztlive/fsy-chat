@@ -51,40 +51,28 @@ impl FileStorage {
     async fn load_chat_session_from_file(
         &self,
         file_path: PathBuf,
-        kernel: &Kernel,
-    ) -> Result<(String, ChatSession), StorageError> {
+    ) -> Result<(String, ChatSessionView), StorageError> {
         let file_name = file_path
             .file_name()
             .and_then(|name| name.to_str())
             .ok_or_else(|| StorageError::Other("无效的文件名".to_string()))?;
 
         let session_id = file_name.to_string().replace(".json", "");
+
         let json_file = fs::read(&file_path).await?;
         let chat_view = serde_json::from_slice::<ChatSessionView>(&json_file)?;
-        let agent = kernel
-            .create_agent(&chat_view.preamble, chat_view.doc_category.as_deref())
-            .await;
 
-        let session = ChatSession::from_view(chat_view, agent)
-            .await
-            .map_err(|e| StorageError::Other(format!("无法反序列化聊天视图: {}", e)))?;
-
-        Ok((session_id, session))
+        Ok((session_id, chat_view))
     }
 
     // 新增：加载单个用户的所有会话
-    async fn load_user_sessions<M: StreamingCompletionModel>(
+    async fn load_user_sessions(
         &self,
         user_dir: PathBuf,
         kernel: &Kernel,
-    ) -> Result<(UserID, UserChatSessions<M>), StorageError> {
-        let user_id = user_dir
-            .file_name()
-            .and_then(|name| name.to_str())
-            .ok_or_else(|| StorageError::Other("无效的用户目录名".to_string()))?;
+    ) -> Result<(), StorageError> {
+        let user_id = parse_user_id_from_directory(&user_dir)?;
 
-        let user_id = UserID::from(user_id);
-        let mut user_sessions = UserChatSessions::new();
         let mut files = fs::read_dir(&user_dir).await?;
 
         while let Ok(Some(entry)) = files.next_entry().await {
@@ -96,9 +84,12 @@ impl FileStorage {
                 continue;
             }
 
-            match self.load_chat_session_from_file(file_path, kernel).await {
-                Ok((session_id, session)) => {
-                    user_sessions.insert(session_id, session);
+            match self.load_chat_session_from_file(file_path).await {
+                Ok((session_id, chat_view)) => {
+                    kernel
+                        .add_history(user_id.clone(), session_id, chat_view)
+                        .await
+                        .map_err(|e| StorageError::Other(format!("添加历史会话失败: {}", e)))?;
                 }
                 Err(e) => {
                     tracing::warn!("加载会话文件失败: {}", e);
@@ -107,13 +98,13 @@ impl FileStorage {
             }
         }
 
-        tracing::info!(
-            "加载用户{}的会话完成, 会话数量: {}",
-            user_id,
-            user_sessions.len()
-        );
+        // tracing::info!(
+        //     "加载用户{}的会话完成, 会话数量: {}",
+        //     user_id,
+        //     user_sessions.len()
+        // );
 
-        Ok((user_id, user_sessions))
+        Ok(())
     }
 }
 
@@ -161,13 +152,8 @@ impl Storage for FileStorage {
                 continue;
             }
 
-            let user_id = get_user_id(&user_dir)?;
-            let mut user_sessions = UserChatSessions::new();
-
             match self.load_user_sessions(user_dir, kernel).await {
-                Ok((user_id, user_sessions)) => {
-                    sessions.add_user_session(user_id, user_sessions).await;
-                }
+                Ok(_) => {}
                 Err(e) => {
                     tracing::warn!("加载用户会话失败: {}", e);
                     continue;
@@ -183,7 +169,14 @@ impl Storage for FileStorage {
     }
 }
 
-fn get_user_id(user_dir: &PathBuf) -> Result<UserID, StorageError> {
+/// 从用户目录路径中提取用户ID
+///
+/// # 参数
+/// * `user_dir` - 用户目录路径
+///
+/// # 返回
+/// * `Result<UserID, StorageError>` - 成功则返回用户ID，失败则返回错误
+fn parse_user_id_from_directory(user_dir: &PathBuf) -> Result<UserID, StorageError> {
     let user_id = user_dir
         .file_name()
         .and_then(|name| name.to_str())

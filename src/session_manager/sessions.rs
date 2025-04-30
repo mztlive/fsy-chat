@@ -50,9 +50,10 @@ impl AsRef<Path> for UserID {
     }
 }
 
-/// 聊天会话集合，管理单个用户的所有聊天会话
+/// 对HashMap<String, ChatSession<M>>的封装，用于管理单个用户的所有聊天会话
 #[derive(Clone)]
 pub struct UserChatSessions<M: StreamingCompletionModel> {
+    /// key is session_id
     inner: HashMap<String, ChatSession<M>>,
 }
 

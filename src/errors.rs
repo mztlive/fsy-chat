@@ -1,7 +1,7 @@
 use rig::{completion::CompletionError, loaders::file::FileLoaderError, tool::ToolError};
 use thiserror::Error;
 
-use crate::chat::SessionMessage;
+use crate::{chat::SessionMessage, session_manager::errors::SessionManagerError};
 
 /// 应用程序错误类型
 ///
@@ -61,6 +61,10 @@ pub enum AppError {
     /// 消息发送错误
     #[error("SendError: {0}")]
     SendError(#[from] tokio::sync::broadcast::error::SendError<SessionMessage>),
+
+    /// 其他错误
+    #[error("Other: {0}")]
+    Other(String),
 }
 
 /// 应用程序结果类型

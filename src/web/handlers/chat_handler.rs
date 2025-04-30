@@ -100,19 +100,9 @@ pub async fn create_session(
     State(app_state): State<AppState>,
     Query(request): Query<NewSSEQuery>,
 ) -> ApiResult<NewSSEResponse> {
-    let agent_config = app_state.kernel().config().agent.clone();
-    let embedding_config = app_state.kernel().config().embedding.clone();
-    let document_manager = app_state.kernel().doc_manager().clone();
-
     let (_, session_id) = app_state
         .kernel()
-        .session_manager()
-        .create_session(
-            DEFAULT_USER_ID.into(),
-            agent_config,
-            Some(embedding_config),
-            Some(document_manager),
-        )
+        .create_session(DEFAULT_USER_ID.into(), "你是热心的助手".to_string(), None)
         .await?;
 
     Ok(ApiResponse::success(NewSSEResponse { session_id }))
