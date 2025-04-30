@@ -7,7 +7,7 @@ use crate::{
     chat::{ChatSession, ChatSessionView},
     config::Config,
     document_loader::DocumentManager,
-    errors::{AppError, AppResult},
+    errors::AppResult,
     session_manager::{Sessions, UserID},
     vector_store::VectorStoreManager,
 };

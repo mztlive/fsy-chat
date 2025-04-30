@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt::Display, ops::Deref, path::Path, sync::Arc};
 
-use futures_util::{StreamExt, future::join_all, stream};
+use futures_util::{StreamExt, future::join_all};
 use rig::streaming::StreamingCompletionModel;
 use serde::Serialize;
 use tokio::sync::Mutex;

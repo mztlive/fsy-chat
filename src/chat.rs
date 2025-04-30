@@ -1,7 +1,7 @@
 use crate::errors::{AppError, AppResult};
 use futures_util::stream::StreamExt;
 use rig::agent::Agent;
-use rig::completion::{Chat, CompletionModel};
+use rig::completion::Chat;
 use rig::message::Message;
 use rig::streaming::{StreamingChat, StreamingChoice, StreamingCompletionModel};
 use serde::{Deserialize, Serialize};

@@ -7,8 +7,7 @@ use crate::errors::AppResult;
 use crate::models::Document;
 use rig::OneOrMany;
 use rig::embeddings::{Embedding, EmbeddingModel, EmbeddingsBuilder};
-use rig::vector_store::VectorStoreIndex;
-use rig::vector_store::in_memory_store::{InMemoryVectorIndex, InMemoryVectorStore};
+use rig::vector_store::in_memory_store::InMemoryVectorStore;
 use tokio::sync::RwLock;
 use tracing::{error, info};
 

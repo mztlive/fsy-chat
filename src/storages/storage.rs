@@ -1,6 +1,5 @@
-use rig::streaming::StreamingCompletionModel;
 
-use crate::{document_loader::DocumentManager, kernel::Kernel};
+use crate::kernel::Kernel;
 
 #[derive(Debug, thiserror::Error)]
 pub enum StorageError {

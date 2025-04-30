@@ -1,16 +1,14 @@
 use std::path::{Path, PathBuf};
 
-use rig::agent::Agent;
 use rig::streaming::StreamingCompletionModel;
 use tokio::fs::{self, File};
 use tokio::io::AsyncWriteExt;
 
 use crate::chat::ChatSessionView;
-use crate::document_loader::DocumentManager;
 use crate::kernel::Kernel;
 use crate::{
     chat::ChatSession,
-    session_manager::{Sessions, UserChatSessions, UserID},
+    session_manager::{UserChatSessions, UserID},
 };
 
 use super::storage::{Storage, StorageError};
