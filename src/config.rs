@@ -1,35 +1,29 @@
 use serde::Deserialize;
 use std::path::PathBuf;
 
-/// 代理配置结构体
+/// 代理配置
 ///
-/// 包含初始化AI代理所需的基本配置信息
+/// 包含AI代理的基本配置参数，如API密钥、前置指令和模型名称
 #[derive(Debug, Clone, Deserialize)]
 pub struct AgentConfig {
     /// OpenAI兼容API的密钥
     pub api_key: String,
-    /// 代理的前置指令文本
-    pub preamble: String,
-    /// 使用的聊天模型名称
+    /// 使用的大语言模型名称
     pub chat_model: String,
 }
 
-/// 嵌入模型配置结构体
+/// 嵌入模型配置
 ///
-/// 包含初始化向量嵌入和检索所需的配置信息
+/// 包含文本嵌入相关的配置参数，用于向量化文档和语义搜索
 #[derive(Debug, Clone, Deserialize)]
 pub struct EmbeddingConfig {
-    /// OpenAI兼容API的密钥
-    pub api_key: String,
     /// 使用的嵌入模型名称
     pub model: String,
-    /// 嵌入向量的维度
-    pub dimensions: usize,
 }
 
-/// 应用程序配置结构体
+/// 应用程序配置
 ///
-/// 包含所有模块所需的配置信息
+/// 包含整个应用程序所需的所有配置信息，是最顶层的配置结构
 ///
 /// # 示例
 /// ```
@@ -64,17 +58,17 @@ pub struct EmbeddingConfig {
 /// ```
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
-    /// 代理配置
+    /// 代理配置，包含LLM相关参数
     pub agent: AgentConfig,
-    /// 嵌入模型配置
+    /// 嵌入模型配置，用于文档向量化
     pub embedding: EmbeddingConfig,
-    /// 文档配置
+    /// 文档配置，包含各类别文档的加载信息
     pub document: DocumentConfig,
 }
 
-/// 文档配置结构体
+/// 文档配置
 ///
-/// 包含文档管理器所需的配置信息
+/// 包含文档加载和管理的相关配置信息
 ///
 /// # 示例
 /// ```
@@ -100,13 +94,13 @@ pub struct Config {
 /// ```
 #[derive(Debug, Clone, Deserialize)]
 pub struct DocumentConfig {
-    /// 文档类目配置
+    /// 文档类别配置列表
     pub categories: Vec<CategoryConfig>,
 }
 
-/// 文档类目配置
+/// 文档类别配置
 ///
-/// 定义文档类目的名称、目录和向量存储集合
+/// 定义单个文档类别的配置参数，如名称和存储路径
 ///
 /// # 示例
 /// ```
@@ -122,8 +116,8 @@ pub struct DocumentConfig {
 /// ```
 #[derive(Debug, Clone, Deserialize)]
 pub struct CategoryConfig {
-    /// 类目名称
+    /// 类别名称
     pub name: String,
-    /// 类目对应的文档目录
+    /// 类别对应的文档目录
     pub directory: PathBuf,
 }

@@ -1,135 +1,99 @@
-# FSY AI 聊天
+# FSY AI 聊天应用
 
-FSY AI 聊天是一个基于 Rust 开发的智能对话应用程序，支持文档检索增强生成(RAG)和智能对话功能。该应用程序可以在 CLI 或 Web 模式下运行，提供流式响应和文档知识库支持。
+FSY AI 聊天是一个基于 Rust 编写的智能聊天应用，支持与大语言模型进行对话，并具有文档检索和向量搜索功能。应用采用模块化设计，易于扩展和维护。
 
-## 功能特点
+## 主要功能
 
-- **双模式运行**：支持 CLI 和 Web 两种运行模式
-- **流式响应**：实时流式输出 AI 回复内容
-- **文档检索增强**：通过向量数据库实现高效的文档检索和问答
-- **会话管理**：支持多会话管理和会话历史记录
-- **文档管理**：支持分类别的文档加载和管理
-- **向量存储**：使用 Qdrant 实现高效的向量存储和检索
-- **可配置性**：通过 TOML 配置文件实现灵活配置
+- 基于大语言模型的智能对话
+- 支持多个聊天会话管理
+- 文档加载和向量检索
+- 会话持久化存储
+- Web 界面接口
+- 支持文档类别和上下文相关问答
 
-## 技术栈
+## 系统架构
 
-- Rust 语言开发
-- Tokio 异步运行时
-- Axum Web 框架
-- Qdrant 向量数据库
-- OpenAI 兼容 API 接口
-- 阿里云 DashScope 模型支持
+系统主要由以下模块组成：
 
-## 安装
+- **核心模块 (Kernel)**: 负责协调各个组件，管理会话和代理创建
+- **聊天模块 (Chat)**: 处理与 AI 模型的对话，管理聊天历史
+- **会话管理 (Session Manager)**: 负责多用户、多会话的存储和管理
+- **文档加载器 (Document Loader)**: 加载和管理文档库
+- **向量存储 (Vector Store)**: 将文档转换为向量并支持语义搜索
+- **配置模块 (Config)**: 管理应用程序配置
+- **存储模块 (Storages)**: 提供会话持久化功能
+- **Web 服务 (Web)**: 提供 HTTP API 接口
 
-### 前置依赖
+## 快速开始
 
-- Rust 1.65+
-- Qdrant 向量数据库
-- 阿里云 DashScope API 密钥或其他 OpenAI 兼容 API 密钥
+### 配置
 
-### 从源代码构建
-
-```bash
-git clone https://github.com/yourusername/fsy-ai-chat.git
-cd fsy-ai-chat
-cargo build --release
-```
-
-## 配置
-
-在项目根目录创建`config.toml`文件，内容示例：
+创建`config.toml`文件，包含以下内容：
 
 ```toml
-# Qdrant向量数据库URL
-qdrant_url = "http://localhost:6334"
-
-# 代理配置
 [agent]
-# API密钥
-api_key = "your-api-key"
-# 代理前置指令
-preamble = "你是一个专业的AI助手，..."
-# 使用的聊天模型
+api_key = "你的API密钥"
+preamble = "你是一个智能助手，请回答问题"
 chat_model = "qwen-max"
 
-# 嵌入模型配置（可选）
 [embedding]
-api_key = "your-api-key"
 model = "text-embedding-v1"
-dimensions = 1536
 
-# 文档配置
 [document]
-# 文档类别配置
 [[document.categories]]
-name = "知识库1"
-directory = "./documents/knowledge1"
-collection_name = "knowledge1"
-
-[[document.categories]]
-name = "知识库2"
-directory = "./documents/knowledge2"
-collection_name = "knowledge2"
+name = "default"
+directory = "./data"
 ```
 
-## 使用方法
-
-### CLI 模式
+### 运行
 
 ```bash
-# 使用默认配置文件
-./fsy-ai-chat
-
-# 指定配置文件
-./fsy-ai-chat -c custom_config.toml
+cargo run -- --config config.toml --port 3000
 ```
 
-### Web 模式
+## API 接口
 
-```bash
-# 在3000端口启动Web服务
-./fsy-ai-chat -m web -p 3000
-```
+应用提供以下主要 API 端点：
 
-## 文档格式
+- `POST /api/chat`: 发送聊天消息
+- `GET /api/sessions`: 获取所有会话列表
+- `POST /api/sessions`: 创建新会话
+- `DELETE /api/sessions/{id}`: 删除会话
+- `GET /api/categories`: 获取文档类别列表
 
-文档应以 JSON 格式存储，每个文件应包含一个或多个 JSON 对象数组，示例：
-
-```json
-[
-  {
-    "id": "doc1",
-    "department": "技术部",
-    "category": "常见问题",
-    "question": "如何重置密码？",
-    "question_variants": ["密码忘记了怎么办", "如何修改密码"],
-    "answer": "您可以通过以下步骤重置密码：1. 访问登录页面 2. 点击'忘记密码' 3. 按照提示操作"
-  }
-]
-```
-
-## 开发
+## 开发指南
 
 ### 项目结构
 
-- `src/main.rs` - 应用程序入口点
-- `src/agent.rs` - AI 代理和模型交互
-- `src/chat.rs` - 聊天会话管理
-- `src/document_loader.rs` - 文档加载和管理
-- `src/vector_store.rs` - 向量存储和检索
-- `src/config.rs` - 配置结构定义
-- `src/errors.rs` - 错误处理
-- `src/web/` - Web 服务相关模块
-- `src/tools/` - 工具函数模块
+```
+src/
+├── chat.rs           # 聊天会话模块
+├── kernel.rs         # 核心协调模块
+├── config.rs         # 配置处理
+├── document_loader.rs # 文档加载器
+├── vector_store.rs   # 向量存储和检索
+├── session_manager/  # 会话管理
+├── storages/         # 持久化存储
+├── web/              # Web服务器
+└── main.rs           # 程序入口
+```
 
-### 扩展功能
+### 扩展指南
 
-- 添加新工具：在`src/tools/`目录中添加新的工具实现
-- 支持新文档类型：扩展`DocumentManager`以支持更多文档格式
-- 添加新的 UI：扩展 Web 界面或开发新的前端
+#### 添加新的文档类别
+
+1. 在配置文件中添加新类别
+2. 在相应目录中添加 JSON 格式的文档
+
+#### 自定义大语言模型
+
+修改`config.toml`文件中的`agent.chat_model`字段。
+
+#### 实现新的存储后端
+
+1. 实现`storage.rs`中的`Storage` trait
+2. 在`kernel.rs`中集成新的存储实现
 
 ## 许可证
 
-[MIT 许可证](LICENSE)
+[MIT License](LICENSE)

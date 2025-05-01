@@ -12,6 +12,11 @@ use crate::{
     vector_store::VectorStoreManager,
 };
 
+/// 应用程序核心组件，协调各模块功能
+///
+/// Kernel是应用程序的中央控制器，负责初始化和协调各个组件，
+/// 管理配置、文档、会话和向量存储。它提供了创建和管理聊天会话
+/// 的接口，是应用程序的核心骨架。
 #[derive(Clone)]
 pub struct Kernel {
     config: Config,
@@ -22,6 +27,15 @@ pub struct Kernel {
 }
 
 impl Kernel {
+    /// 初始化文档管理器
+    ///
+    /// 根据配置加载各类别的文档
+    ///
+    /// # 参数
+    /// * `config` - 应用程序配置
+    ///
+    /// # 返回值
+    /// 返回初始化的文档管理器或错误
     async fn initialize_document_manager(config: &Config) -> AppResult<DocumentManager> {
         let mut manager = DocumentManager::new();
 
@@ -34,6 +48,16 @@ impl Kernel {
         Ok(manager)
     }
 
+    /// 创建新的Kernel实例
+    ///
+    /// 初始化应用程序的核心组件，包括文档管理器和向量存储
+    ///
+    /// # 参数
+    /// * `config` - 应用程序配置
+    /// * `client` - OpenAI兼容API客户端
+    ///
+    /// # 返回值
+    /// 返回初始化的Kernel实例
     pub async fn new(config: Config, client: Client) -> Self {
         let doc_manager = Self::initialize_document_manager(&config)
             .await
@@ -54,14 +78,27 @@ impl Kernel {
         }
     }
 
+    /// 获取应用程序配置
     pub fn config(&self) -> &Config {
         &self.config
     }
 
+    /// 获取文档管理器
     pub fn doc_manager(&self) -> &DocumentManager {
         &self.doc_manager
     }
 
+    /// 创建一个新的AI代理
+    ///
+    /// 根据指定的前置指令和文档类别创建代理实例
+    /// 如果指定了文档类别，会自动关联相应的向量存储以支持RAG功能
+    ///
+    /// # 参数
+    /// * `preamble` - 代理前置指令
+    /// * `doc_category` - 可选的文档类别名称
+    ///
+    /// # 返回值
+    /// 返回配置好的AI代理实例
     pub async fn create_agent(
         &self,
         preamble: &str,
@@ -86,6 +123,17 @@ impl Kernel {
         builder.build()
     }
 
+    /// 添加现有会话历史
+    ///
+    /// 从会话视图恢复会话状态并加入会话管理器
+    ///
+    /// # 参数
+    /// * `user_id` - 用户ID
+    /// * `session_id` - 会话ID
+    /// * `chat_view` - 会话视图数据
+    ///
+    /// # 返回值
+    /// 操作成功则返回Ok，否则返回错误
     pub async fn add_history(
         &self,
         user_id: UserID,
@@ -105,7 +153,17 @@ impl Kernel {
         Ok(())
     }
 
-    // 获取或创建会话
+    /// 创建新的聊天会话
+    ///
+    /// 使用指定的前置指令和可选的文档类别创建一个新会话
+    ///
+    /// # 参数
+    /// * `user_id` - 用户ID
+    /// * `preamble` - 会话前置指令
+    /// * `doc_category` - 可选的文档类别
+    ///
+    /// # 返回值
+    /// 成功则返回会话实例和会话ID，否则返回错误
     pub async fn create_session(
         &self,
         user_id: UserID,
@@ -126,6 +184,13 @@ impl Kernel {
         Ok((session, session_id))
     }
 
+    /// 获取指定ID的会话
+    ///
+    /// # 参数
+    /// * `session_id` - 会话ID
+    ///
+    /// # 返回值
+    /// 如果会话存在则返回会话实例，否则返回None
     pub async fn get_session(
         &self,
         session_id: &str,
@@ -133,10 +198,19 @@ impl Kernel {
         self.sessions.get_session(session_id).await
     }
 
+    /// 获取会话管理器
     pub fn sessions(&self) -> &Sessions<openai::CompletionModel> {
         &self.sessions
     }
 
+    /// 删除指定的会话
+    ///
+    /// # 参数
+    /// * `user_id` - 用户ID
+    /// * `session_id` - 会话ID
+    ///
+    /// # 返回值
+    /// 操作成功则返回Ok，否则返回错误
     pub async fn remove_session(&self, user_id: &UserID, session_id: &str) -> AppResult<()> {
         self.sessions.remove_session(user_id, session_id).await;
         Ok(())

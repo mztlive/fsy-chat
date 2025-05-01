@@ -10,24 +10,27 @@ use crate::errors::AppResult;
 
 /// 文档结构体
 ///
-/// 表示从JSON文件加载的原始文档内容
+/// 表示从JSON文件加载的结构化文档，包含问答对和相关元数据
 #[derive(Debug, Deserialize, Serialize)]
 pub struct JsonDocument {
-    /// 文档ID
+    /// 文档唯一标识符
     pub id: String,
-    /// 部门
+    /// 所属部门
     pub department: String,
-    /// 类别
+    /// 文档类别
     pub category: String,
-    /// 问题
+    /// 主要问题
     pub question: String,
-    /// 问题变体
+    /// 问题的其他表述形式
     pub question_variants: Vec<String>,
-    /// 答案
+    /// 问题的答案
     pub answer: String,
 }
 
-/// 文档管理器结构体，支持加载和按类目访问文档
+/// 文档管理器
+///
+/// 负责从文件系统加载文档，并按类别组织和管理文档。
+/// 支持多个类别的文档集合，每个类别可以包含多个文档。
 #[derive(Clone)]
 pub struct DocumentManager {
     /// 按类目存储的文档集合
@@ -37,19 +40,12 @@ pub struct DocumentManager {
 }
 
 impl DocumentManager {
-    /// 创建一个新的文档管理器实例
+    /// 创建一个新的文档管理器
+    ///
+    /// 初始化一个空的文档管理器，不加载任何文档
     ///
     /// # 返回值
     /// 返回初始化的文档管理器实例
-    ///
-    /// # 示例
-    /// ```
-    /// use fsy_ai_chat::document_loader::DocumentManager;
-    ///
-    /// fn example() {
-    ///     let manager = DocumentManager::new();
-    /// }
-    /// ```
     pub fn new() -> Self {
         Self {
             documents: Arc::new(Mutex::new(HashMap::new())),
@@ -57,35 +53,16 @@ impl DocumentManager {
         }
     }
 
-    /// 加载指定类目的文档
+    /// 加载指定类别的文档
+    ///
+    /// 从指定目录加载JSON格式的文档，并按类别存储
     ///
     /// # 参数
-    /// * `category_config` - 类目配置
-    /// * `directory` - 包含文档的目录路径
+    /// * `category_config` - 类别配置，包含类别名称和其他信息
+    /// * `directory` - 文档所在的目录路径
     ///
     /// # 返回值
-    /// 如果加载成功则返回Ok，否则返回错误
-    ///
-    /// # 示例
-    /// ```
-    /// use std::path::Path;
-    /// use fsy_ai_chat::document_loader::DocumentManager;
-    /// use fsy_ai_chat::config::CategoryConfig;
-    ///
-    /// async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let mut manager = DocumentManager::new();
-    ///     
-    ///     let category_config = CategoryConfig {
-    ///         name: "faq".to_string(),
-    ///         directory: Path::new("./data/faq").to_path_buf(),
-    ///         collection_name: "faq_collection".to_string(),
-    ///     };
-    ///     
-    ///     manager.load_category(category_config, "./data/faq").await?;
-    ///     
-    ///     Ok(())
-    /// }
-    /// ```
+    /// 加载成功返回Ok，否则返回错误
     pub async fn load_category<P: AsRef<Path>>(
         &mut self,
         category_config: CategoryConfig,
@@ -112,11 +89,7 @@ impl DocumentManager {
                     .ok()
             })
             .flat_map(|content| {
-                // let chunks = content
-                //     .split("\n")
-                //     .map(|chunk| chunk.to_string())
-                //     .collect::<Vec<String>>();
-
+                // 解析JSON文档集合
                 let chunks = serde_json::from_str::<Vec<JsonDocument>>(&content).unwrap();
                 chunks
                     .into_iter()
@@ -132,27 +105,11 @@ impl DocumentManager {
         Ok(())
     }
 
-    /// 添加文档到指定类目
+    /// 添加文档到指定类别
     ///
     /// # 参数
-    /// * `category` - 文档所属类目
-    /// * `content` - 文档内容
-    ///
-    /// # 示例
-    /// ```
-    /// use fsy_ai_chat::document_loader::DocumentManager;
-    ///
-    /// async fn example() {
-    ///     let mut manager = DocumentManager::new();
-    ///     
-    ///     let document = r#"{"id":"1","department":"技术","category":"常见问题",
-    ///                         "question":"如何重置密码?",
-    ///                         "question_variants":["密码忘记了怎么办","怎样修改密码"],
-    ///                         "answer":"您可以在登录页面点击'忘记密码'链接进行重置。"}"#;
-    ///     
-    ///     manager.add_document("faq".to_string(), document.to_string()).await;
-    /// }
-    /// ```
+    /// * `category` - 文档类别名称
+    /// * `content` - 文档内容（JSON格式的字符串）
     pub async fn add_document(&mut self, category: String, content: String) {
         self.documents
             .lock()
@@ -162,69 +119,32 @@ impl DocumentManager {
             .push(content);
     }
 
-    /// 获取指定类目的所有文档
+    /// 获取指定类别的所有文档
     ///
     /// # 参数
-    /// * `category` - 要获取文档的类目名称
+    /// * `category` - 类别名称
     ///
     /// # 返回值
-    /// 返回指定类目的所有文档，如果类目不存在则返回None
-    ///
-    /// # 示例
-    /// ```
-    /// use fsy_ai_chat::document_loader::DocumentManager;
-    ///
-    /// async fn example() {
-    ///     let manager = DocumentManager::new();
-    ///     
-    ///     if let Some(documents) = manager.get_documents("faq").await {
-    ///         println!("找到{}个文档", documents.len());
-    ///     } else {
-    ///         println!("类目不存在");
-    ///     }
-    /// }
-    /// ```
+    /// 如果类别存在，返回该类别的所有文档；否则返回None
     #[allow(dead_code)]
     pub async fn get_documents(&self, category: &str) -> Option<Vec<String>> {
         self.documents.lock().await.get(category).map(|v| v.clone())
     }
 
-    /// 获取所有类目
+    /// 获取所有已加载的类别名称
     ///
     /// # 返回值
-    /// 返回系统中所有已加载的类目名称列表
-    ///
-    /// # 示例
-    /// ```
-    /// use fsy_ai_chat::document_loader::DocumentManager;
-    ///
-    /// async fn example() {
-    ///     let manager = DocumentManager::new();
-    ///     
-    ///     let categories = manager.get_categories().await;
-    ///     println!("系统中有以下类目: {:?}", categories);
-    /// }
-    /// ```
+    /// 返回所有类别名称的列表
     pub async fn get_categories(&self) -> Vec<String> {
         self.documents.lock().await.keys().cloned().collect()
     }
 
     /// 获取所有文档
     ///
+    /// 返回所有已加载的文档，不区分类别
+    ///
     /// # 返回值
-    /// 返回所有已加载的文档，不区分类目
-    ///
-    /// # 示例
-    /// ```
-    /// use fsy_ai_chat::document_loader::DocumentManager;
-    ///
-    /// async fn example() {
-    ///     let manager = DocumentManager::new();
-    ///     
-    ///     let all_docs = manager.get_all_documents().await;
-    ///     println!("系统中共有{}个文档", all_docs.len());
-    /// }
-    /// ```
+    /// 返回所有文档内容的列表
     pub async fn get_all_documents(&self) -> Vec<String> {
         self.documents
             .lock()
@@ -235,6 +155,10 @@ impl DocumentManager {
             .collect()
     }
 
+    /// 获取按类别分组的文档集合
+    ///
+    /// # 返回值
+    /// 返回一个映射，键为类别名称，值为该类别下的所有文档
     pub async fn grouped_documents(&self) -> HashMap<String, Vec<String>> {
         self.documents.lock().await.clone()
     }
