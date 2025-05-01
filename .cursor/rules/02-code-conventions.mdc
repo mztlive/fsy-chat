@@ -1,0 +1,42 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# 代码规范与约定
+
+## Rust 后端约定
+
+### 错误处理
+- 使用 [src/errors.rs](mdc:src/errors.rs) 中定义的错误类型和 `AppResult<T>` 类型别名
+- 函数应返回 `AppResult<T>` 而不是标准库的 `Result`
+
+### 文档注释
+- 所有公共函数都使用详细的文档注释，包括:
+  - 功能描述
+  - 参数说明
+  - 返回值说明
+  - 使用示例
+
+### 异步处理
+- 大多数 IO 操作使用 Tokio 进行异步处理
+- 主函数使用 `#[tokio::main]` 宏
+
+### 模块化
+- 每个主要功能拆分为独立模块
+- 使用 `mod` 声明模块，并在顶层 `main.rs` 中汇总
+
+## 前端约定
+
+### 组件风格
+- 使用 SolidJS 函数组件
+- 使用 TypeScript 类型定义
+- 组件名称使用 PascalCase
+
+### 状态管理
+- 使用 SolidJS 响应式系统
+- 复杂状态使用自定义 hooks
+
+### 样式处理
+- 主要样式定义在 [front/src/app.css](mdc:front/src/app.css)
+- 组件特定样式使用类名隔离

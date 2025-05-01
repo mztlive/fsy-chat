@@ -1,0 +1,34 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# FSY AI 聊天应用结构概述
+
+此项目是一个 AI 聊天应用，由 Rust 后端和 SolidJS 前端组成。
+
+## 主要组件
+
+### 后端 (Rust)
+- 主入口点: [src/main.rs](mdc:src/main.rs)
+- 配置处理: [src/config.rs](mdc:src/config.rs)
+- 聊天核心逻辑: [src/chat.rs](mdc:src/chat.rs)
+- 应用内核: [src/kernel.rs](mdc:src/kernel.rs)
+- Web 服务: [src/web](mdc:src/web)
+- 向量存储: [src/vector_store.rs](mdc:src/vector_store.rs)
+- 文档加载器: [src/document_loader.rs](mdc:src/document_loader.rs)
+- 会话管理: [src/session_manager](mdc:src/session_manager)
+- 存储实现: [src/storages](mdc:src/storages)
+- 工具集: [src/tools](mdc:src/tools)
+
+### 前端 (SolidJS)
+- 主入口点: [front/src/app.tsx](mdc:front/src/app.tsx)
+- 路由配置: [front/src/router.tsx](mdc:front/src/router.tsx)
+- 组件库: [front/src/components](mdc:front/src/components)
+- API 通信: [front/src/api](mdc:front/src/api)
+- 实用工具: [front/src/utils](mdc:front/src/utils)
+
+### 配置
+- 主配置文件: [config.toml](mdc:config.toml)
+- 包配置: [Cargo.toml](mdc:Cargo.toml)
+- 前端包配置: [front/package.json](mdc:front/package.json)

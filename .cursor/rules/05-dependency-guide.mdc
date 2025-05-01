@@ -1,0 +1,57 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 项目依赖指南
+
+## Rust 后端依赖
+
+### 核心依赖
+- **tokio**: 异步运行时
+- **axum**: Web 框架
+- **serde**: 序列化/反序列化
+- **toml**: 配置文件解析
+- **tracing**: 日志和追踪
+- **clap**: 命令行参数解析
+
+### 功能依赖
+- **reqwest**: HTTP 客户端
+- **uuid**: UUID 生成
+- **chrono**: 时间处理
+- **regex**: 正则表达式处理
+
+## 前端依赖
+
+### 核心依赖
+- **solid-js**: UI 框架
+- **@tanstack/solid-router**: 路由
+- **@tanstack/solid-query**: 数据请求
+- **@solidjs/meta**: 元数据处理
+
+### UI 组件
+- **@kobalte/core**: 无障碍组件库
+- **solid-icons**: 图标库
+
+### 工具库
+- **lodash**: 实用工具函数
+- **date-fns**: 日期处理
+
+## 依赖添加指南
+
+### 后端依赖
+通过在 [Cargo.toml](mdc:Cargo.toml) 中添加：
+```toml
+[dependencies]
+new_dependency = "版本号"
+```
+
+### 前端依赖
+在 `front` 目录下使用命令添加：
+```bash
+bun add 包名
+```
+
+## 版本管理
+- Rust 依赖版本在 [Cargo.lock](mdc:Cargo.lock) 锁定
+- 前端依赖版本在 [front/bun.lock](mdc:front/bun.lock) 锁定

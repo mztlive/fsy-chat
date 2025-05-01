@@ -1,0 +1,49 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# 项目架构设计
+
+## 整体架构
+
+FSY AI 聊天应用采用前后端分离架构：
+
+1. Rust 后端提供 API 服务和核心功能
+2. SolidJS 前端提供用户界面
+3. HTTP/WebSocket 通信连接前后端
+
+## 后端架构
+
+### 核心组件
+- **Kernel** ([src/kernel.rs](mdc:src/kernel.rs)): 应用核心，协调各组件工作
+- **Chat** ([src/chat.rs](mdc:src/chat.rs)): 处理聊天消息和会话
+- **SessionManager** ([src/session_manager](mdc:src/session_manager)): 管理用户会话
+- **VectorStore** ([src/vector_store.rs](mdc:src/vector_store.rs)): 向量数据存储与检索
+- **DocumentLoader** ([src/document_loader.rs](mdc:src/document_loader.rs)): 加载文档数据
+- **Web** ([src/web](mdc:src/web)): Web API 服务
+
+### 数据流
+```
+用户请求 → Web API → Kernel → Chat/Tools → 模型API → 响应处理 → 用户响应
+```
+
+## 前端架构
+
+### 关键组件
+- **Router** ([front/src/router.tsx](mdc:front/src/router.tsx)): 页面路由
+- **API 客户端** ([front/src/api](mdc:front/src/api)): 与后端通信
+- **UI 组件** ([front/src/components](mdc:front/src/components)): 用户界面元素
+
+### 状态管理
+- 使用 SolidJS 的响应式系统
+- 组件间通过 Props 和上下文共享状态
+
+## 存储架构
+- 会话数据持久化到文件系统
+- 向量数据使用向量数据库存储
+- 配置使用 TOML 文件存储
+
+## 模型接入
+- 通过 [src/client.rs](mdc:src/client.rs) 连接外部 AI 模型 API
+- 支持流式响应和多轮对话

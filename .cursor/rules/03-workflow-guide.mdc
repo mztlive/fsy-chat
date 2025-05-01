@@ -1,0 +1,42 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# 开发工作流指南
+
+## 项目启动流程
+
+### 后端服务
+1. 在项目根目录运行 `cargo run` 启动后端服务
+2. 默认配置位于 [config.toml](mdc:config.toml)
+3. 可以通过命令行参数修改端口：`cargo run -- -p 8080`
+
+### 前端应用
+1. 进入 `front` 目录
+2. 运行 `bun install` 安装依赖
+3. 运行 `bun dev` 启动开发服务器
+
+## 代码开发流程
+
+### 后端开发
+1. 核心逻辑修改应在相应模块中完成
+2. 新增 API 端点需要在 [src/web](mdc:src/web) 模块中添加路由
+3. 新增数据模型需要在 [src/models.rs](mdc:src/models.rs) 中定义
+
+### 前端开发
+1. 新组件应放在 [front/src/components](mdc:front/src/components) 目录下
+2. API 通信逻辑应放在 [front/src/api](mdc:front/src/api) 目录下
+3. 路由定义在 [front/src/router.tsx](mdc:front/src/router.tsx)
+
+## 数据流处理
+
+### 聊天消息流
+1. 前端发送消息到后端 API
+2. 消息通过 [src/chat.rs](mdc:src/chat.rs) 处理
+3. 响应流式返回到前端
+
+### 会话管理
+1. 会话通过 [src/session_manager](mdc:src/session_manager) 管理
+2. 会话定期通过 [src/storages](mdc:src/storages) 持久化
+3. 应用启动时从持久化存储加载会话
