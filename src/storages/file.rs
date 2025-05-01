@@ -84,7 +84,7 @@ impl FileStorage {
             match self.load_chat_session_from_file(file_path).await {
                 Ok((session_id, chat_view)) => {
                     kernel
-                        .add_history(user_id.clone(), session_id, chat_view)
+                        .recovery_chatview(user_id.clone(), session_id, chat_view)
                         .await
                         .map_err(|e| StorageError::Other(format!("添加历史会话失败: {}", e)))?;
                 }

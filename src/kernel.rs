@@ -78,11 +78,6 @@ impl Kernel {
         }
     }
 
-    /// 获取应用程序配置
-    pub fn config(&self) -> &Config {
-        &self.config
-    }
-
     /// 获取文档管理器
     pub fn doc_manager(&self) -> &DocumentManager {
         &self.doc_manager
@@ -123,8 +118,6 @@ impl Kernel {
         builder.build()
     }
 
-    /// 添加现有会话历史
-    ///
     /// 从会话视图恢复会话状态并加入会话管理器
     ///
     /// # 参数
@@ -134,7 +127,7 @@ impl Kernel {
     ///
     /// # 返回值
     /// 操作成功则返回Ok，否则返回错误
-    pub async fn add_history(
+    pub async fn recovery_chatview(
         &self,
         user_id: UserID,
         session_id: String,
