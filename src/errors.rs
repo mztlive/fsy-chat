@@ -62,6 +62,10 @@ pub enum AppError {
     #[error("SendError: {0}")]
     SendError(#[from] tokio::sync::broadcast::error::SendError<SessionMessage>),
 
+    /// 图像生成错误
+    #[error("ImageGenerationError: {0}")]
+    ImageGenerationError(#[from] rig::image_generation::ImageGenerationError),
+
     /// 其他错误
     #[error("Other: {0}")]
     Other(String),

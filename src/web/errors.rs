@@ -14,6 +14,9 @@ pub enum WebError {
 
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
+
+    #[error("Other error: {0}")]
+    OtherError(String),
 }
 
 #[derive(Debug, Serialize)]

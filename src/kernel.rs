@@ -1,10 +1,11 @@
 use rig::{
     agent::Agent,
+    image_generation::{ImageGenerationModel, ImageGenerationRequest},
     providers::openai::{self, Client as OpenAiClient},
 };
 
 use crate::{
-    aliyun::client::Client as AliyunClient,
+    aliyun::{client::Client as AliyunClient, image::schemes::AliyunTaskQueryResponse},
     chat::{ChatSession, ChatSessionView},
     config::Config,
     document_loader::DocumentManager,
@@ -223,5 +224,42 @@ impl Kernel {
     pub async fn remove_session(&self, user_id: &UserID, session_id: &str) -> AppResult<()> {
         self.sessions.remove_session(user_id, session_id).await;
         Ok(())
+    }
+
+    /// 生成图像
+    ///
+    /// # 参数
+    /// * `prompt` - 图像生成提示
+    ///
+    /// # 返回值
+    /// 图像任务的ID
+    pub async fn image_generation_task(&self, prompt: &str) -> AppResult<String> {
+        let model = self
+            .aliyun_client
+            .image_generation_model("wanx2.1-t2i-turbo");
+
+        let request = ImageGenerationRequest {
+            prompt: prompt.to_string(),
+            width: 1024,
+            height: 1024,
+            additional_params: None,
+        };
+
+        let response = model.image_generation(request).await?;
+
+        Ok(response.response.output.task_id)
+    }
+
+    pub async fn query_image_generation_task(
+        &self,
+        task_id: &str,
+    ) -> AppResult<AliyunTaskQueryResponse> {
+        let model = self
+            .aliyun_client
+            .image_generation_model("wanx2.1-t2i-turbo");
+
+        let response = model.query_task(task_id).await?;
+
+        Ok(response)
     }
 }

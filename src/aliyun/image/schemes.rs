@@ -1,11 +1,5 @@
-/// 阿里云图像生成API模块
-/// 实现了与阿里云AI图像生成服务的交互功能
-use super::Client;
-use rig::image_generation::{
-    ImageGenerationError, ImageGenerationRequest, ImageGenerationResponse,
-};
+use rig::image_generation::ImageGenerationRequest;
 use serde::{Deserialize, Serialize};
-use std::convert::From;
 
 /// 阿里云图像生成请求体结构
 /// 符合阿里云API要求的格式
@@ -163,80 +157,86 @@ pub enum AliyunImageGenerationResponse {
     Error(AliyunImageGenerationErrorResponse),
 }
 
-/// 阿里云图像生成模型
-/// 实现rig框架的ImageGenerationModel trait
-#[derive(Clone)]
-pub struct ImageGenerationModel {
-    /// 阿里云API客户端
-    client: Client,
-    /// 使用的模型名称
-    model: String,
+/// 阿里云图像生成任务查询结果项
+/// 成功时包含图像URL，失败时包含错误信息
+#[derive(Debug, Clone, Deserialize)]
+#[serde(untagged)]
+pub enum AliyunTaskResultItem {
+    /// 成功生成的图像
+    Success {
+        /// 生成图像的URL
+        url: String,
+        /// 原始提示词，可选
+        #[serde(skip_serializing_if = "Option::is_none")]
+        orig_prompt: Option<String>,
+        /// 实际使用的提示词，可选（智能改写后）
+        #[serde(skip_serializing_if = "Option::is_none")]
+        actual_prompt: Option<String>,
+    },
+    /// 生成失败的错误信息
+    Error {
+        /// 错误码
+        code: String,
+        /// 错误信息
+        message: String,
+    },
 }
 
-/// ImageGenerationModel的构造和辅助方法
-impl ImageGenerationModel {
-    /// 创建新的ImageGenerationModel实例
-    ///
-    /// # 参数
-    /// * `client` - 阿里云API客户端
-    /// * `model` - 要使用的模型名称，例如"wanx2.1-t2i-turbo"
-    pub fn new(client: Client, model: String) -> Self {
-        Self { client, model }
-    }
+/// 任务指标统计
+#[derive(Debug, Clone, Deserialize)]
+pub struct AliyunTaskMetrics {
+    /// 总任务数
+    pub TOTAL: u32,
+    /// 成功完成的任务数
+    pub SUCCEEDED: u32,
+    /// 失败的任务数
+    pub FAILED: u32,
 }
 
-/// 实现rig框架的ImageGenerationModel trait
-/// 提供标准化的图像生成接口
-impl rig::image_generation::ImageGenerationModel for ImageGenerationModel {
-    /// 定义响应类型为我们的阿里云响应枚举类型
-    type Response = AliyunImageGenerationResponse;
+/// 资源使用统计
+#[derive(Debug, Clone, Deserialize)]
+pub struct AliyunUsage {
+    /// 生成的图像数量
+    pub image_count: u32,
+}
 
-    /// 图像生成方法
-    /// 将通用请求转换为阿里云特定请求，调用API并处理响应
-    ///
-    /// ❗IMPORTANT: 阿里云API的图像生成接口是异步的，
-    /// 因此需要后续查询任务结果来获取实际的图像数据。
-    ///
-    /// # 参数
-    /// * `request` - 通用图像生成请求
-    ///
-    /// # 返回
-    /// * 成功 - 包含响应数据的ImageGenerationResponse
-    /// * 错误 - 包含错误信息的ImageGenerationError
-    async fn image_generation(
-        &self,
-        request: ImageGenerationRequest,
-    ) -> Result<ImageGenerationResponse<Self::Response>, ImageGenerationError> {
-        // 将通用请求转换为阿里云特定请求
-        let mut request = AliyunImageGenerationRequest::from(request);
-        // 使用配置的模型名称
-        request.model = self.model.clone();
+/// 任务查询成功输出
+#[derive(Debug, Clone, Deserialize)]
+pub struct AliyunTaskQueryOutput {
+    /// 任务ID
+    pub task_id: String,
+    /// 任务状态，如"SUCCEEDED"或"FAILED"
+    pub task_status: String,
+    /// 任务提交时间，可选
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub submit_time: Option<String>,
+    /// 任务调度时间，可选
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scheduled_time: Option<String>,
+    /// 任务结束时间，可选
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    /// 任务结果，成功时包含图像URL和提示词信息，可选
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub results: Option<Vec<AliyunTaskResultItem>>,
+    /// 错误码，任务失败时存在
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    /// 错误信息，任务失败时存在
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    /// 任务指标统计
+    pub task_metrics: AliyunTaskMetrics,
+}
 
-        // 调用阿里云API
-        let response = self
-            .client
-            .post("api/v1/services/aigc/text2image/image-synthesis")
-            .header("X-DashScope-Async", "enable") // 启用异步模式
-            .json(&request)
-            .send()
-            .await?;
-
-        // 解析响应
-        let body = response.text().await?;
-        let response: AliyunImageGenerationResponse = serde_json::from_str(&body)?;
-
-        // 处理不同类型的响应
-        match response {
-            // 对于成功响应，返回包含响应数据的结果
-            // 注意：实际图像数据为空，因为这是异步API，需要后续查询结果
-            AliyunImageGenerationResponse::Success(_) => Ok(ImageGenerationResponse {
-                image: vec![],
-                response,
-            }),
-            // 对于错误响应，返回包含错误信息的错误
-            AliyunImageGenerationResponse::Error(error) => {
-                Err(ImageGenerationError::ProviderError(error.message))
-            }
-        }
-    }
+/// 阿里云图像生成任务查询响应
+#[derive(Debug, Clone, Deserialize)]
+pub struct AliyunTaskQueryResponse {
+    /// 请求ID
+    pub request_id: String,
+    /// 输出信息，包含任务状态和结果
+    pub output: AliyunTaskQueryOutput,
+    /// 资源使用统计，可选（任务成功时存在）
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub usage: Option<AliyunUsage>,
 }

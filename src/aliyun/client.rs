@@ -90,6 +90,22 @@ impl Client {
             .header("Authorization", format!("Bearer {}", self.api_key))
     }
 
+    /// Create a GET request to the specified API endpoint path.
+    /// The Authorization header with the API key will be automatically added.
+    ///
+    /// # Arguments
+    /// * `path` - The API endpoint path to append to the base URL
+    ///
+    /// # Returns
+    pub fn get(&self, path: &str) -> reqwest::RequestBuilder {
+        let url = format!("{}/{}", self.base_url, path).replace("//", "/");
+
+        tracing::debug!("GET {}/{}", self.base_url, path);
+        self.http_client
+            .get(url)
+            .header("Authorization", format!("Bearer {}", self.api_key))
+    }
+
     /// Create an embedding model with the given name.
     /// Note: default embedding dimension of 0 will be used if model is not known.
     /// If this is the case, it's better to use function `embedding_model_with_ndims`

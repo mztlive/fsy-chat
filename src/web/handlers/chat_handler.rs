@@ -178,14 +178,3 @@ pub async fn get_all_document_category(
     ))
 }
 
-// 设置路由
-pub fn chat_routes() -> Router<AppState> {
-    Router::new()
-        .route("/chat/sse/{session_id}", get(chat_sse_handler))
-        .route("/chat/message/{session_id}", post(post_message))
-        .route("/chat/create", get(create_session))
-        .route("/all/document/category", get(get_all_document_category))
-        .route("/session/history", get(session_history))
-        .route("/message/history/{session_id}", get(message_history))
-        .route("/session/{session_id}", delete(remove_session))
-}
