@@ -48,3 +48,9 @@ export interface MessageHistoryResponse {
 }
 
 export type MessageHistoryResponseList = ApiResponse<MessageHistoryResponse[]>
+
+export interface ImageGenerationRequest {
+    prompt: string
+}
+
+export type ImageGenerationResponse = ApiResponse<string>
