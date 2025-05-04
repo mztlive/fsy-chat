@@ -52,7 +52,7 @@ impl ImageGenerationModel {
 
         let body = response.text().await?;
 
-        tracing::debug!("阿里云图像生成任务查询结果: {}", body);
+        tracing::info!("阿里云图像生成任务查询结果: {}", body);
         let response: AliyunTaskQueryResponse = serde_json::from_str(&body)?;
 
         Ok(response)
@@ -91,7 +91,7 @@ impl ImageGenerationModel {
 
         // 解析响应
         let body = response.text().await?;
-        tracing::debug!("阿里云图像生成任务响应: {}", body);
+        tracing::info!("阿里云图像生成任务响应: {}", body);
         let response: AliyunImageGenerationResponse = serde_json::from_str(&body)?;
 
         // 处理不同类型的响应

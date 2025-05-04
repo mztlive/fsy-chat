@@ -226,7 +226,8 @@ pub struct AliyunTaskQueryOutput {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     /// 任务指标统计
-    pub task_metrics: AliyunTaskMetrics,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub task_metrics: Option<AliyunTaskMetrics>,
 }
 
 /// 阿里云图像生成任务查询响应
