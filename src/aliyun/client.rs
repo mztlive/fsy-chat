@@ -1,7 +1,7 @@
 use rig::{Embed, embeddings};
 use serde::Deserialize;
 
-use super::embedding::EmbeddingModel;
+use super::{embedding::EmbeddingModel, image::ImageGenerationModel};
 
 // ================================================================
 // Aliyun Gemini Client
@@ -143,6 +143,21 @@ impl Client {
         model: &str,
     ) -> embeddings::EmbeddingsBuilder<EmbeddingModel, D> {
         embeddings::EmbeddingsBuilder::new(self.embedding_model(model))
+    }
+
+    /// Create an image generation model with the given name.
+    ///
+    /// # Example
+    /// ```
+    /// use rig::providers::aliyun::{Client, self};
+    ///
+    /// // Initialize the Aliyun client
+    /// let aliyun = Client::new("your-dashscope-api-key");
+    ///
+    /// let image_generation_model = aliyun.image_generation_model("your-model-name");
+    /// ```
+    pub fn image_generation_model(&self, model: &str) -> ImageGenerationModel {
+        ImageGenerationModel::new(self.clone(), model.to_string())
     }
 }
 
