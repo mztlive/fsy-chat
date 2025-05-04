@@ -1,7 +1,7 @@
 qdrant_url = "http://localhost:6334"
 
 # 代理配置
-[agent]
+[client]
 preamble = """
 你是一个企业内部的专业AI助手、你了解企业内部的所有业务（基于提供的文档）, 你负责解答企业内部员工提出的问题
 

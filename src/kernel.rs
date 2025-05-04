@@ -27,6 +27,10 @@ pub struct Kernel {
 }
 
 impl Kernel {
+    fn create_client(api_key: &str) -> openai::Client {
+        openai::Client::from_url(api_key, "https://dashscope.aliyuncs.com/compatible-mode/v1")
+    }
+
     /// 初始化文档管理器
     ///
     /// 根据配置加载各类别的文档
@@ -58,7 +62,9 @@ impl Kernel {
     ///
     /// # 返回值
     /// 返回初始化的Kernel实例
-    pub async fn new(config: Config, client: Client) -> Self {
+    pub async fn new(config: Config) -> Self {
+        let client = Self::create_client(&config.client.api_key);
+
         let doc_manager = Self::initialize_document_manager(&config)
             .await
             .expect("Can not initialize document manager");
@@ -101,7 +107,7 @@ impl Kernel {
     ) -> Agent<openai::CompletionModel> {
         let mut builder = self
             .client
-            .agent(&self.config.agent.chat_model)
+            .agent(&self.config.client.chat_model)
             .preamble(preamble);
 
         let embedding_model = self.client.embedding_model(&self.config.embedding.model);

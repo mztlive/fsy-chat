@@ -5,7 +5,7 @@ use std::path::PathBuf;
 ///
 /// 包含AI代理的基本配置参数，如API密钥、前置指令和模型名称
 #[derive(Debug, Clone, Deserialize)]
-pub struct AgentConfig {
+pub struct ClientConfig {
     /// OpenAI兼容API的密钥
     pub api_key: String,
     /// 使用的大语言模型名称
@@ -59,7 +59,7 @@ pub struct EmbeddingConfig {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
     /// 代理配置，包含LLM相关参数
-    pub agent: AgentConfig,
+    pub client: ClientConfig,
     /// 嵌入模型配置，用于文档向量化
     pub embedding: EmbeddingConfig,
     /// 文档配置，包含各类别文档的加载信息

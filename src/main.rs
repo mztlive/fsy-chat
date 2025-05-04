@@ -150,9 +150,7 @@ async fn load_chat_sessions(app_state: &Kernel) {
 async fn start_web_server(config: Config, port: u16) -> AppResult<()> {
     info!("初始化Web服务器");
 
-    let client = client::create_client(&config.agent.api_key);
-
-    let kernel = Kernel::new(config, client).await;
+    let kernel = Kernel::new(config).await;
 
     // 初始化聊天会话管理器
     let app_state = AppState::new(kernel.clone());
