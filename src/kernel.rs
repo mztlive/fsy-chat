@@ -1,5 +1,6 @@
 use rig::{
     agent::Agent,
+    image_generation::ImageGenerationModel,
     providers::openai::{self, Client},
 };
 
