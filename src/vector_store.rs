@@ -92,7 +92,6 @@ async fn build_documents(
 
         for (i, doc) in chunk.iter().enumerate() {
             let doc_str = doc.to_string();
-            info!("{}", doc_str);
 
             builder = builder.document(Document {
                 id: format!("doc_{}", i),

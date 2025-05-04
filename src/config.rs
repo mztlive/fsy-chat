@@ -17,8 +17,11 @@ pub struct ClientConfig {
 /// 包含文本嵌入相关的配置参数，用于向量化文档和语义搜索
 #[derive(Debug, Clone, Deserialize)]
 pub struct EmbeddingConfig {
+    pub api_key: String,
     /// 使用的嵌入模型名称
     pub model: String,
+    /// 嵌入模型的维度
+    pub dimensions: u32,
 }
 
 /// 应用程序配置

@@ -9,6 +9,7 @@ mod storages;
 mod tools;
 mod vector_store;
 mod web;
+mod aliyun;
 
 use crate::config::Config;
 use crate::errors::AppResult;

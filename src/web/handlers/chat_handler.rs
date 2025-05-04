@@ -99,7 +99,11 @@ pub async fn create_session(
 ) -> ApiResult<NewSSEResponse> {
     let (_, session_id) = app_state
         .kernel()
-        .create_session(DEFAULT_USER_ID.into(), "你是热心的助手".to_string(), None)
+        .create_session(
+            DEFAULT_USER_ID.into(),
+            "你是热心的助手".to_string(),
+            request.category,
+        )
         .await?;
 
     Ok(ApiResponse::success(NewSSEResponse { session_id }))

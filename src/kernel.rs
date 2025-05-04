@@ -1,10 +1,10 @@
 use rig::{
     agent::Agent,
-    image_generation::ImageGenerationModel,
-    providers::openai::{self, Client},
+    providers::openai::{self, Client as OpenAiClient},
 };
 
 use crate::{
+    aliyun::client::Client as AliyunClient,
     chat::{ChatSession, ChatSessionView},
     config::Config,
     document_loader::DocumentManager,
@@ -22,7 +22,8 @@ use crate::{
 pub struct Kernel {
     config: Config,
     doc_manager: DocumentManager,
-    client: Client,
+    client: OpenAiClient,
+    aliyun_client: AliyunClient,
     vector_store_manager: VectorStoreManager,
     sessions: Sessions<openai::CompletionModel>,
 }
@@ -65,12 +66,16 @@ impl Kernel {
     /// 返回初始化的Kernel实例
     pub async fn new(config: Config) -> Self {
         let client = Self::create_client(&config.client.api_key);
+        let aliyun_client = AliyunClient::new(&config.embedding.api_key);
 
         let doc_manager = Self::initialize_document_manager(&config)
             .await
             .expect("Can not initialize document manager");
 
-        let embedding_model = client.embedding_model(&config.embedding.model);
+        let embedding_model = aliyun_client.embedding_model_with_ndims(
+            &config.embedding.model,
+            config.embedding.dimensions as usize,
+        );
 
         let store_manager = VectorStoreManager::from_documents(&doc_manager, embedding_model)
             .await
@@ -80,6 +85,7 @@ impl Kernel {
             config,
             doc_manager,
             client,
+            aliyun_client,
             vector_store_manager: store_manager,
             sessions: Sessions::new(),
         }
@@ -111,7 +117,10 @@ impl Kernel {
             .agent(&self.config.client.chat_model)
             .preamble(preamble);
 
-        let embedding_model = self.client.embedding_model(&self.config.embedding.model);
+        let embedding_model = self.aliyun_client.embedding_model_with_ndims(
+            &self.config.embedding.model,
+            self.config.embedding.dimensions as usize,
+        );
 
         if let Some(doc_category) = doc_category {
             match self.vector_store_manager.find_store(doc_category).await {
