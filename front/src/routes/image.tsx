@@ -8,6 +8,7 @@ import {
     PromptInput,
     AspectRatio,
     GeneratedImage,
+    EmptyState,
 } from '../components/image'
 import ErrorAlert from '~/components/common/ErrorAlert'
 import { Portal } from 'solid-js/web'
@@ -44,13 +45,7 @@ function ImageRoute() {
             const response = await imageGeneration(prompt())
 
             if (response.status === 200 && response.data) {
-                const newImages = response.data.map(url => ({
-                    id: nanoid(),
-                    url,
-                    timestamp: Date.now(),
-                }))
-
-                setGeneratedImages([...newImages, ...generatedImages()])
+                setGeneratedImages([response.data, ...generatedImages()])
                 setPrompt('') // 清空输入框
             } else {
                 // 处理失败情况
@@ -70,7 +65,7 @@ function ImageRoute() {
             <div class="max-w-5xl mx-auto px-4 py-8">
                 {/* 主内容区 */}
                 {/* 生成的图片展示 */}
-                <div class="p-6">
+                <div class="p-6 pb-32">
                     <GeneratedImages
                         images={generatedImages()}
                         onImageSelect={handleImageSelect}
@@ -78,23 +73,7 @@ function ImageRoute() {
                     />
 
                     <Show when={generatedImages().length === 0 && !loading()}>
-                        <div class="text-center py-16 text-gray-400">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="h-16 w-16 mx-auto mb-4 opacity-20"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="1"
-                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                />
-                            </svg>
-                            <p>您创建的图像将在这里展示</p>
-                        </div>
+                        <EmptyState />
                     </Show>
                 </div>
 

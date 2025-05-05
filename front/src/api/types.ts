@@ -52,3 +52,9 @@ export type MessageHistoryResponseList = ApiResponse<MessageHistoryResponse[]>
 export interface ImageGenerationRequest {
     prompt: string
 }
+
+export interface GeneratedImage {
+    urls: string[]
+    timestamp: number
+    actual_prompt: string
+}

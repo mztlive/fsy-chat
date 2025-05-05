@@ -1,7 +1,7 @@
 import { BASE_URL, post } from './request'
-import { ApiResponse } from './types'
+import { ApiResponse, GeneratedImage } from './types'
 
-export const imageGeneration = async (prompt: string): Promise<ApiResponse<string[]>> => {
+export const imageGeneration = async (prompt: string): Promise<ApiResponse<GeneratedImage>> => {
     return post(`/image/generation`, {
         prompt,
     })

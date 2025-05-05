@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use axum::{Json, Router, extract::State, routing::post};
+use axum::{Json, extract::State};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -16,10 +16,42 @@ pub struct ImageGenerationRequest {
     pub prompt: String,
 }
 
+#[derive(Debug, Serialize)]
+pub struct GeneratedImage {
+    pub urls: Vec<String>,
+    pub timestamp: i64,
+    pub actual_prompt: String,
+}
+
+fn build_result(results: &Vec<AliyunTaskResultItem>) -> GeneratedImage {
+    let mut urls = vec![];
+    let mut result_actual_prompt = String::new();
+
+    for result in results {
+        match result {
+            AliyunTaskResultItem::Success {
+                url,
+                orig_prompt: _,
+                actual_prompt: Some(actual_prompt),
+            } => {
+                urls.push(url.to_string());
+                result_actual_prompt = actual_prompt.to_string();
+            }
+            _ => {}
+        }
+    }
+
+    GeneratedImage {
+        urls,
+        timestamp: chrono::Local::now().timestamp_millis() as i64,
+        actual_prompt: result_actual_prompt,
+    }
+}
+
 pub async fn image_generation(
     State(app_state): State<AppState>,
     Json(request): Json<ImageGenerationRequest>,
-) -> ApiResult<Vec<String>> {
+) -> ApiResult<GeneratedImage> {
     let task_id = app_state
         .kernel()
         .image_generation_task(&request.prompt)
@@ -38,17 +70,7 @@ pub async fn image_generation(
 
         if response.output.task_status == "SUCCEEDED" {
             if let Some(results) = response.output.results {
-                let mut urls = vec![];
-                for result in results {
-                    match result {
-                        AliyunTaskResultItem::Success { url, .. } => {
-                            urls.push(url.clone());
-                        }
-                        _ => {}
-                    }
-                }
-
-                return Ok(ApiResponse::success(urls));
+                return Ok(ApiResponse::success(build_result(&results)));
             }
 
             return Err(WebError::OtherError(format!(
