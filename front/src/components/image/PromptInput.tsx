@@ -31,7 +31,7 @@ export default function PromptInput(props: PromptInputProps) {
 
     return (
         <div class="w-full">
-            <div class="relative bg-white/30 rounded-lg border border-gray-200 shadow-sm backdrop-blur-md focus-within:border-blue-300 focus-within:ring-1 focus-within:ring-blue-300">
+            <div class="relative bg-white/60 rounded-lg border border-gray-200 shadow-sm backdrop-blur-md focus-within:border-blue-300 focus-within:ring-1 focus-within:ring-blue-300">
                 <textarea
                     class="w-full p-4 rounded-lg resize-none text-sm focus:outline-none bg-transparent"
                     style="min-height: 80px"
