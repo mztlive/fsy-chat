@@ -236,7 +236,7 @@ impl Kernel {
     pub async fn image_generation_task(&self, prompt: &str) -> AppResult<String> {
         let model = self
             .aliyun_client
-            .image_generation_model("wanx2.1-t2i-turbo");
+            .image_generation_model("wanx2.1-t2i-plus");
 
         let request = ImageGenerationRequest {
             prompt: prompt.to_string(),
@@ -256,7 +256,7 @@ impl Kernel {
     ) -> AppResult<AliyunTaskQueryResponse> {
         let model = self
             .aliyun_client
-            .image_generation_model("wanx2.1-t2i-turbo");
+            .image_generation_model("wanx2.1-t2i-plus");
 
         let response = model.query_task(task_id).await?;
 

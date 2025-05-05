@@ -19,7 +19,7 @@ pub struct ImageGenerationRequest {
 pub async fn image_generation(
     State(app_state): State<AppState>,
     Json(request): Json<ImageGenerationRequest>,
-) -> ApiResult<String> {
+) -> ApiResult<Vec<String>> {
     let task_id = app_state
         .kernel()
         .image_generation_task(&request.prompt)
@@ -27,7 +27,7 @@ pub async fn image_generation(
 
     // 每秒查询一次任务状态
     let mut interval = tokio::time::interval(Duration::from_secs(1));
-    let mut timeout = 30;
+    let mut timeout = 60;
     loop {
         interval.tick().await;
         timeout -= 1;
@@ -38,14 +38,17 @@ pub async fn image_generation(
 
         if response.output.task_status == "SUCCEEDED" {
             if let Some(results) = response.output.results {
-                if let Some(result) = results.first() {
+                let mut urls = vec![];
+                for result in results {
                     match result {
                         AliyunTaskResultItem::Success { url, .. } => {
-                            return Ok(ApiResponse::success(url.clone()));
+                            urls.push(url.clone());
                         }
                         _ => {}
                     }
                 }
+
+                return Ok(ApiResponse::success(urls));
             }
 
             return Err(WebError::OtherError(format!(

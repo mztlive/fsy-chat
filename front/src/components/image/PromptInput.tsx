@@ -1,4 +1,5 @@
 import { createSignal } from 'solid-js'
+import AspectRatioSelector, { AspectRatio } from './AspectRatioSelector'
 
 export interface PromptInputProps {
     prompt: string
@@ -8,6 +9,18 @@ export interface PromptInputProps {
 }
 
 export default function PromptInput(props: PromptInputProps) {
+    // 图片比例列表和选中状态
+    const [aspectRatios] = createSignal<AspectRatio[]>([
+        { id: '1:1', label: '1:1', ratio: '1:1' },
+        { id: '16:9', label: '16:9', ratio: '16:9' },
+        { id: '3:2', label: '3:2', ratio: '3:2' },
+        { id: '4:3', label: '4:3', ratio: '4:3' },
+        { id: '3:4', label: '3:4', ratio: '3:4' },
+        { id: '2:3', label: '2:3', ratio: '2:3' },
+        { id: '9:16', label: '9:16', ratio: '9:16' },
+    ])
+    const [selectedRatio, setSelectedRatio] = createSignal('1:1')
+
     // 处理按键事件，Enter键触发生成
     const handleKeyPress = (e: KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -18,10 +31,10 @@ export default function PromptInput(props: PromptInputProps) {
 
     return (
         <div class="w-full">
-            <div class="relative bg-white/50 rounded-lg border border-gray-200 shadow-sm focus-within:border-blue-300 focus-within:ring-1 focus-within:ring-blue-300">
+            <div class="relative bg-white/30 rounded-lg border border-gray-200 shadow-sm backdrop-blur-md focus-within:border-blue-300 focus-within:ring-1 focus-within:ring-blue-300">
                 <textarea
                     class="w-full p-4 rounded-lg resize-none text-sm focus:outline-none bg-transparent"
-                    style="min-height: 120px"
+                    style="min-height: 80px"
                     placeholder="详细描述您想要的图像，越具体越好..."
                     value={props.prompt}
                     onInput={e => props.onPromptChange(e.target.value)}
@@ -36,6 +49,11 @@ export default function PromptInput(props: PromptInputProps) {
                         </span>{' '}
                         / 1000
                     </div>
+                    <AspectRatioSelector
+                        ratios={aspectRatios()}
+                        selectedRatio={selectedRatio()}
+                        onRatioSelect={setSelectedRatio}
+                    />
 
                     <div class="flex space-x-2">
                         <button

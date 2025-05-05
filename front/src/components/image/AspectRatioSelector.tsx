@@ -12,21 +12,21 @@ export interface AspectRatioSelectorProps {
     onRatioSelect: (ratioId: string) => void
 }
 
-export default function AspectRatioSelector(props: AspectRatioSelectorProps) {
+const AspectRatioSelector = (props: AspectRatioSelectorProps) => {
     return (
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap gap-1">
             <For each={props.ratios}>
                 {ratio => (
                     <button
-                        class={`flex flex-col items-center rounded-lg transition ${
+                        class={`flex flex-col items-center rounded-md transition ${
                             props.selectedRatio === ratio.id
-                                ? 'bg-blue-50 border-2 border-blue-500 text-blue-700'
+                                ? 'bg-blue-50 border border-blue-500 text-blue-700'
                                 : 'bg-gray-50 border border-gray-200 text-gray-600 hover:border-gray-300'
-                        } px-4 py-2`}
+                        } px-2 py-1`}
                         onClick={() => props.onRatioSelect(ratio.id)}
                     >
-                        <div class="flex items-center gap-2">
-                            <div class="w-6 h-6 bg-gray-200 rounded flex items-center justify-center">
+                        <div class="flex items-center gap-1">
+                            <div class="w-4 h-4 bg-gray-200 rounded flex items-center justify-center">
                                 <div
                                     class="bg-gray-500"
                                     style={{
@@ -37,7 +37,7 @@ export default function AspectRatioSelector(props: AspectRatioSelectorProps) {
                                     }}
                                 ></div>
                             </div>
-                            <span class="text-sm font-medium">{ratio.label}</span>
+                            <span class="text-xs font-medium">{ratio.label}</span>
                         </div>
                     </button>
                 )}
@@ -45,3 +45,5 @@ export default function AspectRatioSelector(props: AspectRatioSelectorProps) {
         </div>
     )
 }
+
+export default AspectRatioSelector
