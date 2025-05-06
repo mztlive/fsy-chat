@@ -7,7 +7,7 @@ export interface PromptInputProps {
     prompt: string
     onPromptChange: (prompt: string) => void
     onGenerate: () => void
-    disabled: boolean
+    loading: boolean
 }
 
 export default function PromptInput(props: PromptInputProps) {
@@ -23,21 +23,21 @@ export default function PromptInput(props: PromptInputProps) {
 
     return (
         <div class="w-full">
-            <div class="relative bg-white/60 rounded-lg border border-gray-200 shadow-sm">
+            <div class="card bg-base-100/80 shadow-sm border border-base-200">
                 <textarea
-                    class="w-full p-4 rounded resize-none text-sm focus:outline-none bg-transparent"
+                    class="textarea w-full p-4 resize-none text-sm bg-transparent border-none outline-none focus:outline-none focus:border-none focus:ring-0"
                     style="min-height: 80px"
                     placeholder="详细描述您想要的图像，越具体越好..."
                     value={props.prompt}
                     onInput={e => props.onPromptChange(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    disabled={props.disabled}
+                    disabled={props.loading}
                 />
 
-                <div class="p-3 border-t border-gray-100 flex justify-between items-center">
+                <div class="card-actions p-3 border-t border-base-200 flex justify-between items-center">
                     <div class="flex items-center gap-2">
-                        <div class="text-xs text-gray-400">
-                            <span class={props.prompt.length > 900 ? 'text-orange-500' : ''}>
+                        <div class="text-xs text-base-content/60">
+                            <span class={props.prompt.length > 900 ? 'text-warning' : ''}>
                                 {props.prompt.length}
                             </span>{' '}
                             / 1000
@@ -47,15 +47,15 @@ export default function PromptInput(props: PromptInputProps) {
 
                     <div class="flex space-x-2">
                         <button
-                            class="px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition disabled:opacity-50"
+                            class="btn btn-sm btn-ghost btn-square"
                             onClick={() => props.onPromptChange('')}
-                            disabled={props.disabled || !props.prompt}
+                            disabled={props.loading || !props.prompt}
                             title="清空输入"
                         >
                             <TrashIcon />
                         </button>
 
-                        <GenerateButton disabled={props.disabled} onGenerate={props.onGenerate} />
+                        <GenerateButton disabled={props.loading} onGenerate={props.onGenerate} />
                     </div>
                 </div>
             </div>

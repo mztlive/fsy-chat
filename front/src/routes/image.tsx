@@ -84,7 +84,7 @@ function ImageRoute() {
                             prompt={prompt()}
                             onPromptChange={setPrompt}
                             onGenerate={handleGenerate}
-                            disabled={loading()}
+                            loading={loading()}
                         />
 
                         <Show when={error()}>

@@ -1,60 +1,42 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+
 @plugin "daisyui/theme" {
-  name: "mytheme";
-  default: true; /* set as default */
-  prefersdark: true; /* set as default dark mode (prefers-color-scheme:dark) */
-  color-scheme: light; /* color of browser-provided UI */
-
-  /* 以公司logo颜色#3E48FF为基础的协调主题 */
-  --color-base-100: oklch(98% 0.02 260); /* #fafbff - 非常浅的蓝白色背景 */
-  --color-base-200: oklch(95% 0.03 260); /* #f2f4fc - 淡蓝白色背景，略深 */
-  --color-base-300: oklch(92% 0.04 260); /* #eaedfa - 淡蓝色背景，再深一些 */
-  --color-base-content: oklch(20% 0.05 260); /* #1a1d33 - 深蓝灰色文字 */
-  
-  /* 主色调 - 公司logo颜色 */
-  --color-primary: oklch(62% 0.19 260); /* #3e48ff - 鲜艳的蓝紫色 */
-  --color-primary-content: oklch(98% 0.01 260); /* #fafbff - 在主色调上的文字，接近白色 */
-  
-  /* 辅助色调 - 使用相近色系 */
-  --color-secondary: oklch(75% 0.15 230); /* #7a9cf3 - 淡蓝色，较为柔和 */
-  --color-secondary-content: oklch(98% 0.01 230); /* #fafeff - 在辅助色上的文字，几乎是白色 */
-  
-  /* 强调色 - 使用互补色 */
-  --color-accent: oklch(70% 0.17 290); /* #bd6eff - 紫色，与主色调形成对比 */
-  --color-accent-content: oklch(98% 0.01 290); /* #fdfaff - 在强调色上的文字，接近白色 */
-  
-  /* 中性色 */
-  --color-neutral: oklch(50% 0.05 260); /* #474c75 - 中性蓝灰色 */
-  --color-neutral-content: oklch(98% 0.01 260); /* #fafbff - 在中性色上的文字，接近白色 */
-  
-  /* 功能色 */
-  --color-info: oklch(70% 0.15 240); /* #6b8ff8 - 信息蓝，偏淡 */
-  --color-info-content: oklch(98% 0.01 240); /* #fafbff - 在信息色上的文字，接近白色 */
-  --color-success: oklch(65% 0.20 150); /* #1fc378 - 成功绿色 */
-  --color-success-content: oklch(98% 0.01 150); /* #f9fefc - 在成功色上的文字，接近白色 */
-  --color-warning: oklch(80% 0.20 85); /* #f8ce4c - 警告黄色 */
-  --color-warning-content: oklch(20% 0.05 85); /* #2e2b1e - 在警告色上的文字，深褐色 */
-  --color-error: oklch(65% 0.25 30); /* #e64e45 - 错误红色 */
-  --color-error-content: oklch(98% 0.01 30); /* #fffbfa - 在错误色上的文字，接近白色 */
-
-  /* border radius */
-  --radius-selector: 1rem;
+  name: "light";
+  default: true;
+  prefersdark: true;
+  color-scheme: "light";
+  --color-base-100: oklch(100% 0 0);
+  --color-base-200: oklch(98% 0 0);
+  --color-base-300: oklch(95% 0 0);
+  --color-base-content: oklch(21% 0.006 285.885);
+  --color-primary: oklch(62% 0.214 259.815);
+  --color-primary-content: oklch(93% 0.034 272.788);
+  --color-secondary: oklch(65% 0.241 354.308);
+  --color-secondary-content: oklch(94% 0.028 342.258);
+  --color-accent: oklch(77% 0.152 181.912);
+  --color-accent-content: oklch(38% 0.063 188.416);
+  --color-neutral: oklch(14% 0.005 285.823);
+  --color-neutral-content: oklch(92% 0.004 286.32);
+  --color-info: oklch(74% 0.16 232.661);
+  --color-info-content: oklch(29% 0.066 243.157);
+  --color-success: oklch(76% 0.177 163.223);
+  --color-success-content: oklch(37% 0.077 168.94);
+  --color-warning: oklch(82% 0.189 84.429);
+  --color-warning-content: oklch(41% 0.112 45.904);
+  --color-error: oklch(71% 0.194 13.428);
+  --color-error-content: oklch(27% 0.105 12.094);
+  --radius-selector: 0.5rem;
   --radius-field: 0.25rem;
-  --radius-box: 0.5rem;
-
-  /* base sizes */
+  --radius-box: 0.25rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
-
-  /* border size */
   --border: 1px;
-
-  /* effects */
   --depth: 1;
   --noise: 0;
 }
+
 
 /* 自定义组件样式 */
 .textarea-transition {
