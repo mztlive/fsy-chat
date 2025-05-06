@@ -9,7 +9,7 @@ export default function App() {
 
     return (
         <MetaProvider>
-            <Meta title="AI助手" />
+            <Meta title="福尚云AI助手" />
             <Meta
                 name="viewport"
                 content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
