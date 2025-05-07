@@ -1,5 +1,4 @@
 import { Motion } from 'solid-motionone'
-import { ImageActionButtons } from '.'
 
 interface GeneratedVideoProps {
     url: string
@@ -7,24 +6,14 @@ interface GeneratedVideoProps {
 
 const GeneratedVideo = (props: GeneratedVideoProps) => {
     return (
-        <>
-            <div class="w-full h-80">
-                <video src={props.url} class="w-full h-full object-contain" autoplay controls />
-            </div>
-            <div class="flex flex-row justify-end">
-                <button class="btn btn-sm">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                        />
-                    </svg>
-                    <span class="text-xs">下载</span>
-                </button>
-            </div>
-        </>
+        <div class="w-full">
+            <video
+                src={props.url}
+                class="w-full h-auto rounded-t-box object-contain"
+                controls
+                preload="metadata"
+            />
+        </div>
     )
 }
 
