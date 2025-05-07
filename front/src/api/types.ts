@@ -58,3 +58,15 @@ export interface GeneratedImage {
     timestamp: number
     actual_prompt: string
 }
+
+export interface VideoGenerationRequest {
+    prompt: string
+    width: number
+    height: number
+}
+
+export interface GeneratedVideo {
+    url: string
+    timestamp: number
+    actual_prompt: string
+}

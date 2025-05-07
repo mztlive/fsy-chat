@@ -25,6 +25,7 @@ use super::handlers::chat_handler::post_message;
 use super::handlers::chat_handler::remove_session;
 use super::handlers::chat_handler::session_history;
 use super::handlers::image_handler::image_generation;
+use super::handlers::video_handler::video_generation;
 
 // 设置路由
 pub fn app_routes() -> Router<AppState> {
@@ -37,6 +38,7 @@ pub fn app_routes() -> Router<AppState> {
         .route("/message/history/{session_id}", get(message_history))
         .route("/session/{session_id}", delete(remove_session))
         .route("/image/generation", post(image_generation))
+        .route("/video/generation", post(video_generation))
 }
 
 pub fn create_router(app_state: AppState) -> Router {

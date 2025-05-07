@@ -240,3 +240,62 @@ impl From<Text2VideoGenerationRequest>
         }
     }
 }
+
+/// 阿里云文生视频任务统计信息
+#[derive(Debug, Clone, Deserialize)]
+pub struct Text2VideoTaskUsage {
+    /// 生成视频的时长，单位秒
+    pub video_duration: u32,
+    /// 生成视频的比例，固定为standard
+    pub video_ratio: String,
+    /// 生成视频的数量
+    pub video_count: u32,
+}
+
+/// 阿里云文生视频任务查询结果
+/// 包含任务状态、视频URL、提示词信息等
+#[derive(Debug, Clone, Deserialize)]
+pub struct Text2VideoTaskQueryOutput {
+    /// 任务ID
+    pub task_id: String,
+    /// 任务状态：PENDING(排队中)、RUNNING(处理中)、SUCCEEDED(成功)、FAILED(失败)、CANCELED(取消)、UNKNOWN(未知)
+    pub task_status: String,
+    /// 任务提交时间
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub submit_time: Option<String>,
+    /// 任务调度时间
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scheduled_time: Option<String>,
+    /// 任务结束时间
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    /// 生成视频的URL
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub video_url: Option<String>,
+    /// 原始提示词
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub orig_prompt: Option<String>,
+    /// 实际使用的提示词（智能改写后）
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub actual_prompt: Option<String>,
+    /// 错误码，任务失败时存在
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    /// 错误信息，任务失败时存在
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+
+impl TaskOutput for Text2VideoTaskQueryOutput {
+    fn is_succeeded(&self) -> bool {
+        self.task_status == "SUCCEEDED"
+    }
+
+    fn is_failed(&self) -> bool {
+        self.task_status == "FAILED"
+    }
+
+    fn error_message(&self) -> String {
+        self.message.clone().unwrap_or_default()
+    }
+}

@@ -11,6 +11,7 @@ export interface PromptInputProps {
     loading: boolean
     onCancel?: () => void
     onRatioSelect: (ratio: AspectRatio) => void
+    mode?: 'image' | 'video'
 }
 
 export default function PromptInput(props: PromptInputProps) {
@@ -62,7 +63,10 @@ export default function PromptInput(props: PromptInputProps) {
                                 </span>{' '}
                                 / 1000
                             </div>
-                            <AspectRatioSelector onRatioSelect={props.onRatioSelect} />
+                            <AspectRatioSelector
+                                onRatioSelect={props.onRatioSelect}
+                                mode={props.mode}
+                            />
                         </div>
 
                         <div class="flex space-x-2">

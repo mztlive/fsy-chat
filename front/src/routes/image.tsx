@@ -1,17 +1,8 @@
 import { createFileRoute } from '@tanstack/solid-router'
 import { createSignal, Show } from 'solid-js'
-import { nanoid } from 'nanoid'
-import { imageGeneration } from '../api/image'
-import {
-    AspectRatioSelector,
-    GeneratedImages,
-    PromptInput,
-    AspectRatio,
-    EmptyState,
-} from '../components/image'
+import { GeneratedImages, PromptInput, AspectRatio, EmptyState } from '../components/image'
 import ErrorAlert from '~/components/common/ErrorAlert'
 import { Portal } from 'solid-js/web'
-import { GeneratedImage } from '~/api'
 import { useImageGenerate } from '~/hooks/image_generate'
 
 export const Route = createFileRoute('/image')({
