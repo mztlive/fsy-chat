@@ -8,13 +8,9 @@ interface GeneratedVideoProps {
 const GeneratedVideo = (props: GeneratedVideoProps) => {
     return (
         <>
-            <Motion.div
-                initial={{ scale: 0.95, opacity: 0.5 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.3 }}
-            >
-                <video src={props.url} class="object-cover" autoplay controls />
-            </Motion.div>
+            <div class="w-full h-80">
+                <video src={props.url} class="w-full h-full object-contain" autoplay controls />
+            </div>
             <div class="flex flex-row justify-end">
                 <button class="btn btn-sm">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
