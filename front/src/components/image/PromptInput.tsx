@@ -10,11 +10,10 @@ export interface PromptInputProps {
     onGenerate: () => void
     loading: boolean
     onCancel?: () => void
+    onRatioSelect: (ratio: AspectRatio) => void
 }
 
 export default function PromptInput(props: PromptInputProps) {
-    const [selectedRatio, setSelectedRatio] = createSignal('1:1')
-
     // 处理按键事件，Enter键触发生成
     const handleKeyPress = (e: KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -63,7 +62,7 @@ export default function PromptInput(props: PromptInputProps) {
                                 </span>{' '}
                                 / 1000
                             </div>
-                            <AspectRatioSelector onRatioSelect={setSelectedRatio} />
+                            <AspectRatioSelector onRatioSelect={props.onRatioSelect} />
                         </div>
 
                         <div class="flex space-x-2">

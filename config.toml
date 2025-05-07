@@ -41,3 +41,7 @@ dimensions = 1536
 [[document.categories]]
 name = "客服"
 directory = "./docs"
+
+
+[image]
+model = "wanx2.1-t2i-plus"

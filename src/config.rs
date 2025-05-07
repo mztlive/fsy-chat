@@ -67,6 +67,8 @@ pub struct Config {
     pub embedding: EmbeddingConfig,
     /// 文档配置，包含各类别文档的加载信息
     pub document: DocumentConfig,
+
+    pub image: ImageGenerationConfig,
 }
 
 /// 文档配置
@@ -123,4 +125,9 @@ pub struct CategoryConfig {
     pub name: String,
     /// 类别对应的文档目录
     pub directory: PathBuf,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct ImageGenerationConfig {
+    pub model: String,
 }

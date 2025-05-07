@@ -21,6 +21,15 @@ export const Route = createFileRoute('/image')({
 function ImageRoute() {
     // 提示词和图片生成状态
     const [prompt, setPrompt] = createSignal('')
+
+    const [ratio, setRatio] = createSignal<AspectRatio>({
+        id: '1:1',
+        label: '1:1',
+        ratio: '1:1',
+        width: 1024,
+        height: 1024,
+    })
+
     const { generatedImages, createImage, error, isPending } = useImageGenerate()
 
     // 选择图片
@@ -31,7 +40,7 @@ function ImageRoute() {
 
     // 生成图片
     const handleGenerate = async () => {
-        await createImage(prompt())
+        await createImage(prompt(), ratio().width, ratio().height)
         setPrompt('') // 清空输入框
     }
 
@@ -60,6 +69,7 @@ function ImageRoute() {
                             onPromptChange={setPrompt}
                             onGenerate={handleGenerate}
                             loading={isPending()}
+                            onRatioSelect={setRatio}
                         />
 
                         <Show when={error()}>

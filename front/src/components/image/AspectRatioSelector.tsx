@@ -5,22 +5,24 @@ export interface AspectRatio {
     id: string
     label: string
     ratio: string
+    width: number
+    height: number
 }
 
 export interface AspectRatioSelectorProps {
-    onRatioSelect: (ratioId: string) => void
+    onRatioSelect: (ratio: AspectRatio) => void
 }
 
 const AspectRatioSelector = (props: AspectRatioSelectorProps) => {
     // 图片比例列表和选中状态
     const [aspectRatios] = createSignal<AspectRatio[]>([
-        { id: '1:1', label: '1:1', ratio: '1:1' },
-        { id: '16:9', label: '16:9', ratio: '16:9' },
-        { id: '3:2', label: '3:2', ratio: '3:2' },
-        { id: '4:3', label: '4:3', ratio: '4:3' },
-        { id: '3:4', label: '3:4', ratio: '3:4' },
-        { id: '2:3', label: '2:3', ratio: '2:3' },
-        { id: '9:16', label: '9:16', ratio: '9:16' },
+        { id: '1:1', label: '1:1', ratio: '1:1', width: 1024, height: 1024 },
+        { id: '16:9', label: '16:9', ratio: '16:9', width: 1440, height: 810 },
+        { id: '3:2', label: '3:2', ratio: '3:2', width: 1440, height: 960 },
+        { id: '4:3', label: '4:3', ratio: '4:3', width: 1440, height: 1080 },
+        { id: '3:4', label: '3:4', ratio: '3:4', width: 1080, height: 1440 },
+        { id: '2:3', label: '2:3', ratio: '2:3', width: 960, height: 1440 },
+        { id: '9:16', label: '9:16', ratio: '9:16', width: 810, height: 1440 },
     ])
     const [selectedRatio, setSelectedRatio] = createSignal('1:1')
 
@@ -30,7 +32,7 @@ const AspectRatioSelector = (props: AspectRatioSelectorProps) => {
 
     const handleSelect = (ratioId: string) => {
         setSelectedRatio(ratioId)
-        props.onRatioSelect(ratioId)
+        props.onRatioSelect(aspectRatios().find(ratio => ratio.id === ratioId)!)
         setIsOpen(false)
     }
 

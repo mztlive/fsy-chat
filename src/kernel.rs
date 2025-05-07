@@ -5,7 +5,7 @@ use rig::{
 };
 
 use crate::{
-    aliyun::{client::Client as AliyunClient, image::schemes::AliyunTaskQueryResponse},
+    aliyun::{self, client::Client as AliyunClient, image::schemes::AliyunTaskQueryResponse},
     chat::{ChatSession, ChatSessionView},
     config::Config,
     document_loader::DocumentManager,
@@ -225,6 +225,14 @@ impl Kernel {
         self.sessions.remove_session(user_id, session_id).await;
         Ok(())
     }
+}
+
+// impl for image generation
+impl Kernel {
+    pub fn image_generation_model(&self) -> aliyun::image::ImageGenerationModel {
+        self.aliyun_client
+            .image_generation_model(&self.config.image.model)
+    }
 
     /// 生成图像
     ///
@@ -233,15 +241,18 @@ impl Kernel {
     ///
     /// # 返回值
     /// 图像任务的ID
-    pub async fn image_generation_task(&self, prompt: &str) -> AppResult<String> {
-        let model = self
-            .aliyun_client
-            .image_generation_model("wanx2.1-t2i-plus");
+    pub async fn image_generation_task(
+        &self,
+        prompt: &str,
+        width: u32,
+        height: u32,
+    ) -> AppResult<String> {
+        let model = self.image_generation_model();
 
         let request = ImageGenerationRequest {
             prompt: prompt.to_string(),
-            width: 1024,
-            height: 1024,
+            width,
+            height,
             additional_params: None,
         };
 
@@ -250,13 +261,18 @@ impl Kernel {
         Ok(response.response.output.task_id)
     }
 
+    /// 查询图像生成任务
+    ///
+    /// # 参数
+    /// * `task_id` - 任务ID
+    ///
+    /// # 返回值
+    /// 任务查询结果
     pub async fn query_image_generation_task(
         &self,
         task_id: &str,
     ) -> AppResult<AliyunTaskQueryResponse> {
-        let model = self
-            .aliyun_client
-            .image_generation_model("wanx2.1-t2i-plus");
+        let model = self.image_generation_model();
 
         let response = model.query_task(task_id).await?;
 

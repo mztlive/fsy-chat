@@ -14,6 +14,8 @@ use crate::{
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ImageGenerationRequest {
     pub prompt: String,
+    pub width: u32,
+    pub height: u32,
 }
 
 #[derive(Debug, Serialize)]
@@ -57,7 +59,7 @@ pub async fn image_generation(
 ) -> ApiResult<GeneratedImage> {
     let task_id = app_state
         .kernel()
-        .image_generation_task(&request.prompt)
+        .image_generation_task(&request.prompt, request.width, request.height)
         .await?;
 
     // 每秒查询一次任务状态
