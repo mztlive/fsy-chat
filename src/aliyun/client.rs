@@ -1,7 +1,11 @@
 use rig::{Embed, embeddings};
-use serde::Deserialize;
+use serde::{Deserialize, de::DeserializeOwned};
 
-use super::{embedding::EmbeddingModel, image::ImageGenerationModel};
+use super::{
+    embedding::EmbeddingModel,
+    media::ImageGenerationModel,
+    scheme::{AliyunError, TaskQueryResponse},
+};
 
 // ================================================================
 // Aliyun Gemini Client
@@ -174,6 +178,34 @@ impl Client {
     /// ```
     pub fn image_generation_model(&self, model: &str) -> ImageGenerationModel {
         ImageGenerationModel::new(self.clone(), model.to_string())
+    }
+
+    /// 查询图像生成任务
+    ///
+    /// # 参数
+    /// * `task_id` - 图像生成任务的ID
+    ///
+    /// # 返回
+    /// * 成功 - 包含任务查询结果的AliyunTaskQueryResponse
+    pub async fn query_task<O, U>(
+        &self,
+        task_id: &str,
+    ) -> Result<TaskQueryResponse<O, U>, AliyunError>
+    where
+        O: DeserializeOwned,
+        U: DeserializeOwned,
+    {
+        let response = self
+            .get(&format!("api/v1/tasks/{}", task_id))
+            .send()
+            .await?;
+
+        let body = response.text().await?;
+
+        tracing::info!("阿里云生成任务查询结果: {}", body);
+        let response: TaskQueryResponse<O, U> = serde_json::from_str(&body)?;
+
+        Ok(response)
     }
 }
 

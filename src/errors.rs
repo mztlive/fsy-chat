@@ -1,7 +1,7 @@
 use rig::{completion::CompletionError, loaders::file::FileLoaderError, tool::ToolError};
 use thiserror::Error;
 
-use crate::chat::SessionMessage;
+use crate::{aliyun, chat::SessionMessage};
 
 /// 应用程序错误类型
 ///
@@ -65,6 +65,10 @@ pub enum AppError {
     /// 图像生成错误
     #[error("ImageGenerationError: {0}")]
     ImageGenerationError(#[from] rig::image_generation::ImageGenerationError),
+
+    /// 阿里云生成错误
+    #[error("AliyunImageGenerationError: {0}")]
+    AliyunImageGenerationError(#[from] aliyun::scheme::AliyunError),
 
     /// 其他错误
     #[error("Other: {0}")]

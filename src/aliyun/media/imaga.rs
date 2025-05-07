@@ -5,11 +5,9 @@ use rig::image_generation::{
 };
 use std::convert::From;
 
-use crate::aliyun::Client;
-
-use super::schemes::{
-    AliyunImageGenerationRequest, AliyunImageGenerationResponse,
-    AliyunImageGenerationSuccessResponse, AliyunTaskQueryResponse,
+use crate::aliyun::{
+    Client,
+    scheme::{AsyncGenerationSuccessResponse, AsyncImageGenerationResponse, GenerationRequest},
 };
 
 /// 阿里云图像生成模型
@@ -33,31 +31,6 @@ impl ImageGenerationModel {
         Self { client, model }
     }
 
-    /// 查询图像生成任务
-    ///
-    /// # 参数
-    /// * `task_id` - 图像生成任务的ID
-    ///
-    /// # 返回
-    /// * 成功 - 包含任务查询结果的AliyunTaskQueryResponse
-    pub async fn query_task(
-        &self,
-        task_id: &str,
-    ) -> Result<AliyunTaskQueryResponse, ImageGenerationError> {
-        let response = self
-            .client
-            .get(&format!("api/v1/tasks/{}", task_id))
-            .send()
-            .await?;
-
-        let body = response.text().await?;
-
-        tracing::info!("阿里云图像生成任务查询结果: {}", body);
-        let response: AliyunTaskQueryResponse = serde_json::from_str(&body)?;
-
-        Ok(response)
-    }
-
     /// 图像生成方法
     /// 将通用请求转换为阿里云特定请求，调用API并处理响应
     ///
@@ -73,10 +46,9 @@ impl ImageGenerationModel {
     pub async fn image_generation_task(
         &self,
         request: ImageGenerationRequest,
-    ) -> Result<ImageGenerationResponse<AliyunImageGenerationSuccessResponse>, ImageGenerationError>
-    {
+    ) -> Result<ImageGenerationResponse<AsyncGenerationSuccessResponse>, ImageGenerationError> {
         // 将通用请求转换为阿里云特定请求
-        let mut request = AliyunImageGenerationRequest::from(request);
+        let mut request = GenerationRequest::from(request);
         // 使用配置的模型名称
         request.model = self.model.clone();
 
@@ -92,18 +64,18 @@ impl ImageGenerationModel {
         // 解析响应
         let body = response.text().await?;
         tracing::info!("阿里云图像生成任务响应: {}", body);
-        let response: AliyunImageGenerationResponse = serde_json::from_str(&body)?;
+        let response: AsyncImageGenerationResponse = serde_json::from_str(&body)?;
 
         // 处理不同类型的响应
         match response {
             // 对于成功响应，返回包含响应数据的结果
             // 注意：实际图像数据为空，因为这是异步API，需要后续查询结果
-            AliyunImageGenerationResponse::Success(success) => Ok(ImageGenerationResponse {
+            AsyncImageGenerationResponse::Success(success) => Ok(ImageGenerationResponse {
                 image: vec![],
                 response: success,
             }),
             // 对于错误响应，返回包含错误信息的错误
-            AliyunImageGenerationResponse::Error(error) => {
+            AsyncImageGenerationResponse::Error(error) => {
                 Err(ImageGenerationError::ProviderError(error.message))
             }
         }
@@ -114,7 +86,7 @@ impl ImageGenerationModel {
 /// 提供标准化的图像生成接口
 impl rig::image_generation::ImageGenerationModel for ImageGenerationModel {
     /// 定义响应类型为我们的阿里云响应枚举类型
-    type Response = AliyunImageGenerationSuccessResponse;
+    type Response = AsyncGenerationSuccessResponse;
 
     /// 图像生成方法
     /// 将通用请求转换为阿里云特定请求，调用API并处理响应

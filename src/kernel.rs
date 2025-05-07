@@ -5,7 +5,12 @@ use rig::{
 };
 
 use crate::{
-    aliyun::{self, client::Client as AliyunClient, image::schemes::AliyunTaskQueryResponse},
+    aliyun::{
+        self,
+        client::Client as AliyunClient,
+        media::schemes::{ImageTaskQueryOutput, Text2ImageTaskUsage},
+        scheme::TaskQueryResponse,
+    },
     chat::{ChatSession, ChatSessionView},
     config::Config,
     document_loader::DocumentManager,
@@ -229,7 +234,7 @@ impl Kernel {
 
 // impl for image generation
 impl Kernel {
-    pub fn image_generation_model(&self) -> aliyun::image::ImageGenerationModel {
+    pub fn image_generation_model(&self) -> aliyun::media::ImageGenerationModel {
         self.aliyun_client
             .image_generation_model(&self.config.image.model)
     }
@@ -271,11 +276,7 @@ impl Kernel {
     pub async fn query_image_generation_task(
         &self,
         task_id: &str,
-    ) -> AppResult<AliyunTaskQueryResponse> {
-        let model = self.image_generation_model();
-
-        let response = model.query_task(task_id).await?;
-
-        Ok(response)
+    ) -> AppResult<TaskQueryResponse<ImageTaskQueryOutput, Text2ImageTaskUsage>> {
+        Ok(self.aliyun_client.query_task(task_id).await?)
     }
 }

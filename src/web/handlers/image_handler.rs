@@ -4,7 +4,7 @@ use axum::{Json, extract::State};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    aliyun::image::schemes::AliyunTaskResultItem,
+    aliyun::media::schemes::Text2ImageTaskItem,
     web::{
         AppState,
         errors::{ApiResponse, ApiResult, WebError},
@@ -28,13 +28,13 @@ pub struct GeneratedImage {
 const MAX_QUERY_COUNT: usize = 60;
 const QUERY_INTERVAL: Duration = Duration::from_secs(2);
 
-fn build_result(results: &Vec<AliyunTaskResultItem>) -> GeneratedImage {
+fn build_result(results: &Vec<Text2ImageTaskItem>) -> GeneratedImage {
     let mut urls = vec![];
     let mut result_actual_prompt = String::new();
 
     for result in results {
         match result {
-            AliyunTaskResultItem::Success {
+            Text2ImageTaskItem::Success {
                 url,
                 orig_prompt: _,
                 actual_prompt: Some(actual_prompt),
