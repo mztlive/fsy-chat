@@ -23,6 +23,9 @@ pub struct GeneratedImage {
     pub actual_prompt: String,
 }
 
+const MAX_QUERY_COUNT: usize = 60;
+const QUERY_INTERVAL: Duration = Duration::from_secs(2);
+
 fn build_result(results: &Vec<AliyunTaskResultItem>) -> GeneratedImage {
     let mut urls = vec![];
     let mut result_actual_prompt = String::new();
@@ -58,8 +61,8 @@ pub async fn image_generation(
         .await?;
 
     // 每秒查询一次任务状态
-    let mut interval = tokio::time::interval(Duration::from_secs(1));
-    let mut timeout = 60;
+    let mut interval = tokio::time::interval(QUERY_INTERVAL);
+    let mut timeout = MAX_QUERY_COUNT;
     loop {
         interval.tick().await;
         timeout -= 1;

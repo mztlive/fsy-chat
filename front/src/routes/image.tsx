@@ -7,11 +7,11 @@ import {
     GeneratedImages,
     PromptInput,
     AspectRatio,
-    GeneratedImage,
     EmptyState,
 } from '../components/image'
 import ErrorAlert from '~/components/common/ErrorAlert'
 import { Portal } from 'solid-js/web'
+import { GeneratedImage } from '~/api'
 
 export const Route = createFileRoute('/image')({
     component: ImageRoute,
