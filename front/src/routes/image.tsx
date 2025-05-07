@@ -12,6 +12,7 @@ import {
 import ErrorAlert from '~/components/common/ErrorAlert'
 import { Portal } from 'solid-js/web'
 import { GeneratedImage } from '~/api'
+import { useImageGenerate } from '~/hooks/image_generate'
 
 export const Route = createFileRoute('/image')({
     component: ImageRoute,
@@ -20,9 +21,7 @@ export const Route = createFileRoute('/image')({
 function ImageRoute() {
     // 提示词和图片生成状态
     const [prompt, setPrompt] = createSignal('')
-    const [generatedImages, setGeneratedImages] = createSignal<GeneratedImage[]>([])
-    const [loading, setLoading] = createSignal(false)
-    const [error, setError] = createSignal('')
+    const { generatedImages, createImage, error, isPending } = useImageGenerate()
 
     // 选择图片
     const handleImageSelect = (imageId: string) => {
@@ -32,32 +31,8 @@ function ImageRoute() {
 
     // 生成图片
     const handleGenerate = async () => {
-        if (!prompt().trim()) {
-            setError('请输入描述文字')
-            return
-        }
-
-        setLoading(true)
-        setError('')
-
-        try {
-            // 调用API生成图片
-            const response = await imageGeneration(prompt())
-
-            if (response.status === 200 && response.data) {
-                setGeneratedImages([response.data, ...generatedImages()])
-                setPrompt('') // 清空输入框
-            } else {
-                // 处理失败情况
-                setError(response.message || '图像生成失败')
-            }
-        } catch (error) {
-            // 处理异常
-            console.error('图像生成出错:', error)
-            setError(error instanceof Error ? error.message : '未知错误')
-        } finally {
-            setLoading(false)
-        }
+        await createImage(prompt())
+        setPrompt('') // 清空输入框
     }
 
     return (
@@ -69,10 +44,10 @@ function ImageRoute() {
                     <GeneratedImages
                         images={generatedImages()}
                         onImageSelect={handleImageSelect}
-                        loading={loading()}
+                        loading={isPending()}
                     />
 
-                    <Show when={generatedImages().length === 0 && !loading()}>
+                    <Show when={generatedImages().length === 0 && !isPending()}>
                         <EmptyState />
                     </Show>
                 </div>
@@ -84,11 +59,11 @@ function ImageRoute() {
                             prompt={prompt()}
                             onPromptChange={setPrompt}
                             onGenerate={handleGenerate}
-                            loading={loading()}
+                            loading={isPending()}
                         />
 
                         <Show when={error()}>
-                            <ErrorAlert message={error()} />
+                            <ErrorAlert message={error()?.message} />
                         </Show>
                     </div>
                 </Portal>
