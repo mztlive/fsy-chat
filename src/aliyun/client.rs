@@ -1,10 +1,14 @@
 use rig::{Embed, embeddings};
-use serde::{Deserialize, de::DeserializeOwned};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
+
+use crate::aliyun::scheme::AsyncImageGenerationResponse;
 
 use super::{
     embedding::EmbeddingModel,
-    media::ImageGenerationModel,
-    scheme::{AliyunError, TaskQueryResponse},
+    media::{ImageGenerationModel, video::VideoGenerationModel},
+    scheme::{
+        AliyunError, AsyncGenerationOutput, GenerationRequest, TaskOutput, TaskQueryResponse,
+    },
 };
 
 // ================================================================
@@ -180,6 +184,55 @@ impl Client {
         ImageGenerationModel::new(self.clone(), model.to_string())
     }
 
+    /// Create a video generation model with the given name.
+    ///
+    /// # Example
+    /// ```
+    /// use rig::providers::aliyun::{Client, self};
+    ///
+    /// // Initialize the Aliyun client
+    /// let aliyun = Client::new("your-dashscope-api-key");
+    ///
+    /// let video_generation_model = aliyun.video_generation_model("your-model-name");
+    /// ```
+    pub fn video_generation_model(&self, model: &str) -> VideoGenerationModel {
+        VideoGenerationModel::new(self.clone(), model.to_string())
+    }
+}
+
+impl Client {
+    pub(crate) async fn async_generate_task<I, P>(
+        &self,
+        request: GenerationRequest<I, P>,
+        path: &str,
+    ) -> Result<AsyncGenerationOutput, AliyunError>
+    where
+        I: Serialize,
+        P: Serialize,
+    {
+        // 调用阿里云API
+        let response = self
+            .post(path)
+            .header("X-DashScope-Async", "enable") // 启用异步模式
+            .json(&request)
+            .send()
+            .await?;
+
+        // 解析响应
+        let body = response.text().await?;
+        tracing::info!("阿里云Generate任务响应: {}", body);
+        let response: AsyncImageGenerationResponse = serde_json::from_str(&body)?;
+
+        // 处理不同类型的响应
+        match response {
+            // 对于成功响应，返回包含响应数据的结果
+            // 注意：这是异步API，需要后续查询结果
+            AsyncImageGenerationResponse::Success(success) => Ok(success.output),
+            // 对于错误响应，返回包含错误信息的错误
+            AsyncImageGenerationResponse::Error(error) => Err(AliyunError::ApiError(error.message)),
+        }
+    }
+
     /// 查询图像生成任务
     ///
     /// # 参数
@@ -192,7 +245,7 @@ impl Client {
         task_id: &str,
     ) -> Result<TaskQueryResponse<O, U>, AliyunError>
     where
-        O: DeserializeOwned,
+        O: TaskOutput + DeserializeOwned,
         U: DeserializeOwned,
     {
         let response = self

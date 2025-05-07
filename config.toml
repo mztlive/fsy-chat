@@ -45,3 +45,6 @@ directory = "./docs"
 
 [image]
 model = "wanx2.1-t2i-plus"
+
+[video]
+model = "wanx2.1-t2v-turbo"

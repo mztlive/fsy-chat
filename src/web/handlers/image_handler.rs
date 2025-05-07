@@ -4,12 +4,14 @@ use axum::{Json, extract::State};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    aliyun::media::schemes::Text2ImageTaskItem,
+    aliyun::media::schemes::{ImageTaskQueryOutput, Text2ImageTaskItem, Text2ImageTaskUsage},
     web::{
         AppState,
         errors::{ApiResponse, ApiResult, WebError},
     },
 };
+
+use super::utils::wait_generation_task;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ImageGenerationRequest {
@@ -24,9 +26,6 @@ pub struct GeneratedImage {
     pub timestamp: i64,
     pub actual_prompt: String,
 }
-
-const MAX_QUERY_COUNT: usize = 60;
-const QUERY_INTERVAL: Duration = Duration::from_secs(2);
 
 fn build_result(results: &Vec<Text2ImageTaskItem>) -> GeneratedImage {
     let mut urls = vec![];
@@ -62,40 +61,16 @@ pub async fn image_generation(
         .image_generation_task(&request.prompt, request.width, request.height)
         .await?;
 
-    // 每秒查询一次任务状态
-    let mut interval = tokio::time::interval(QUERY_INTERVAL);
-    let mut timeout = MAX_QUERY_COUNT;
-    loop {
-        interval.tick().await;
-        timeout -= 1;
-        let response = app_state
-            .kernel()
-            .query_image_generation_task(&task_id)
-            .await?;
+    let response = wait_generation_task::<ImageTaskQueryOutput, Text2ImageTaskUsage>(
+        &app_state.kernel(),
+        &task_id,
+    )
+    .await?;
 
-        if response.output.task_status == "SUCCEEDED" {
-            if let Some(results) = response.output.results {
-                return Ok(ApiResponse::success(build_result(&results)));
-            }
-
-            return Err(WebError::OtherError(format!(
-                "Image generation failed: {}",
-                response.output.message.unwrap_or_default()
-            )));
-        }
-
-        if response.output.task_status == "FAILED" {
-            return Err(WebError::OtherError(format!(
-                "Image generation failed: {}",
-                response.output.message.unwrap_or_default()
-            )));
-        }
-
-        if timeout <= 0 {
-            return Err(WebError::OtherError(format!(
-                "Image generation timeout: {}",
-                response.output.message.unwrap_or_default()
-            )));
-        }
+    match response.output.results {
+        Some(results) => Ok(ApiResponse::success(build_result(&results))),
+        None => Err(WebError::OtherError(
+            "Image generation failed: can not get results".to_string(),
+        )),
     }
 }

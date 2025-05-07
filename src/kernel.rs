@@ -3,13 +3,16 @@ use rig::{
     image_generation::{ImageGenerationModel, ImageGenerationRequest},
     providers::openai::{self, Client as OpenAiClient},
 };
+use serde::de::DeserializeOwned;
 
 use crate::{
     aliyun::{
-        self,
         client::Client as AliyunClient,
-        media::schemes::{ImageTaskQueryOutput, Text2ImageTaskUsage},
-        scheme::TaskQueryResponse,
+        media::schemes::{
+            ImageTaskQueryOutput, Text2ImageTaskUsage, Text2VideoGenerationRequest,
+            Text2VideoInput, Text2VideoParameters,
+        },
+        scheme::{TaskOutput, TaskQueryResponse},
     },
     chat::{ChatSession, ChatSessionView},
     config::Config,
@@ -234,11 +237,6 @@ impl Kernel {
 
 // impl for image generation
 impl Kernel {
-    pub fn image_generation_model(&self) -> aliyun::media::ImageGenerationModel {
-        self.aliyun_client
-            .image_generation_model(&self.config.image.model)
-    }
-
     /// 生成图像
     ///
     /// # 参数
@@ -252,7 +250,9 @@ impl Kernel {
         width: u32,
         height: u32,
     ) -> AppResult<String> {
-        let model = self.image_generation_model();
+        let model = self
+            .aliyun_client
+            .image_generation_model(&self.config.image.model);
 
         let request = ImageGenerationRequest {
             prompt: prompt.to_string(),
@@ -263,20 +263,58 @@ impl Kernel {
 
         let response = model.image_generation(request).await?;
 
-        Ok(response.response.output.task_id)
+        Ok(response.response.task_id)
     }
 
-    /// 查询图像生成任务
+    /// 生成视频
+    ///
+    /// # 参数
+    /// * `prompt` - 视频生成提示
+    ///
+    /// # 返回值
+    /// 视频任务的ID
+    pub async fn video_generation_task(
+        &self,
+        prompt: &str,
+        width: u32,
+        height: u32,
+    ) -> AppResult<String> {
+        let model = self
+            .aliyun_client
+            .video_generation_model(&self.config.video.model);
+
+        let request = Text2VideoGenerationRequest {
+            input: Text2VideoInput {
+                prompt: prompt.to_string(),
+            },
+            parameters: Text2VideoParameters {
+                size: Some(format!("{}*{}", width, height)),
+                duration: Some(5),
+                prompt_extend: Some(true),
+                seed: None,
+            },
+        };
+
+        let response = model.create_task(request).await?;
+
+        Ok(response.task_id)
+    }
+
+    /// 查询生成任务的结果
     ///
     /// # 参数
     /// * `task_id` - 任务ID
     ///
     /// # 返回值
     /// 任务查询结果
-    pub async fn query_image_generation_task(
+    pub async fn query_generation_task<O, U>(
         &self,
         task_id: &str,
-    ) -> AppResult<TaskQueryResponse<ImageTaskQueryOutput, Text2ImageTaskUsage>> {
+    ) -> AppResult<TaskQueryResponse<O, U>>
+    where
+        O: TaskOutput + DeserializeOwned,
+        U: DeserializeOwned,
+    {
         Ok(self.aliyun_client.query_task(task_id).await?)
     }
 }

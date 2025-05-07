@@ -1,7 +1,11 @@
 use rig::image_generation::ImageGenerationRequest;
 use serde::{Deserialize, Serialize};
 
-use crate::aliyun::scheme::GenerationRequest;
+use crate::aliyun::scheme::{GenerationRequest, TaskOutput};
+
+const DEFAULT_TEXT2VIDEO_MODEL: &str = "wanx2.1-t2v-turbo";
+
+const DEFAULT_TEXT2IMAGE_MODEL: &str = "wanx2.1-t2i-turbo";
 
 /// 阿里云图像生成输入结构
 /// 包含用于描述生成图像的提示词
@@ -86,7 +90,7 @@ impl From<ImageGenerationRequest>
                 model: params
                     .get("model")
                     .and_then(|v| v.as_str())
-                    .unwrap_or("wanx2.1-t2i-turbo")
+                    .unwrap_or(DEFAULT_TEXT2IMAGE_MODEL)
                     .to_string(),
                 input,
                 parameters: Some(parameters),
@@ -95,7 +99,7 @@ impl From<ImageGenerationRequest>
 
         // 如果没有additional_params，使用默认值
         GenerationRequest {
-            model: "wanx2.1-t2i-turbo".to_string(), // 默认模型
+            model: DEFAULT_TEXT2IMAGE_MODEL.to_string(), // 默认模型
             input: ImageGenerationInput {
                 prompt: request.prompt,
                 negative_prompt: None,
@@ -176,4 +180,63 @@ pub struct ImageTaskQueryOutput {
     /// 任务指标统计
     #[serde(skip_serializing_if = "Option::is_none")]
     pub task_metrics: Option<Text2ImageTaskMetrics>,
+}
+
+impl TaskOutput for ImageTaskQueryOutput {
+    fn is_succeeded(&self) -> bool {
+        self.task_status == "SUCCEEDED"
+    }
+
+    fn is_failed(&self) -> bool {
+        self.task_status == "FAILED"
+    }
+
+    fn error_message(&self) -> String {
+        self.message.clone().unwrap_or_default()
+    }
+}
+
+/// 阿里云文生视频输入结构
+/// 阿里云文生视频输入结构
+/// 包含用于描述生成视频的提示词
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Text2VideoInput {
+    /// 文本提示词，支持中英文，长度不超过800个字符
+    pub prompt: String,
+}
+
+/// 阿里云文生视频参数结构
+/// 定义了视频生成的各种可选参数
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Text2VideoParameters {
+    /// 生成视频的分辨率，默认值1280*720，格式为"宽*高"
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub size: Option<String>,
+    /// 生成视频的时长，默认为5，单位为秒，目前仅支持5秒固定时长生成
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub duration: Option<u32>,
+    /// 是否开启prompt智能改写，默认为true
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub prompt_extend: Option<bool>,
+    /// 随机数种子，用于控制模型生成内容的随机性，取值范围是[0, 2147483647]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub seed: Option<i32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Text2VideoGenerationRequest {
+    pub input: Text2VideoInput,
+    pub parameters: Text2VideoParameters,
+}
+
+impl From<Text2VideoGenerationRequest>
+    for GenerationRequest<Text2VideoInput, Text2VideoParameters>
+{
+    fn from(request: Text2VideoGenerationRequest) -> Self {
+        GenerationRequest {
+            model: DEFAULT_TEXT2VIDEO_MODEL.to_string(),
+            input: request.input,
+            parameters: Some(request.parameters),
+        }
+    }
 }

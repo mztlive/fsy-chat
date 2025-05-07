@@ -1,8 +1,16 @@
 use serde::{Deserialize, Serialize};
 
+pub trait TaskOutput {
+    fn is_succeeded(&self) -> bool;
+
+    fn error_message(&self) -> String;
+
+    fn is_failed(&self) -> bool;
+}
+
 /// 阿里云图像生成任务查询响应
 #[derive(Debug, Clone, Deserialize)]
-pub struct TaskQueryResponse<O, U> {
+pub struct TaskQueryResponse<O: TaskOutput, U> {
     /// 请求ID
     pub request_id: String,
     /// 输出信息，包含任务状态和结果
@@ -12,7 +20,7 @@ pub struct TaskQueryResponse<O, U> {
     pub usage: Option<U>,
 }
 
-/// 阿里云图像生成请求体结构
+/// 阿里云生成请求体结构
 /// 符合阿里云API要求的格式
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenerationRequest<I, P> {
@@ -76,4 +84,7 @@ pub enum AliyunError {
     /// 解析失败
     #[error("parse failed: {0}")]
     ParseFailed(#[from] serde_json::Error),
+    /// 阿里云API错误
+    #[error("aliyun api error: {0}")]
+    ApiError(String),
 }

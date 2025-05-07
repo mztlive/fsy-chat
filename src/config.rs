@@ -69,6 +69,8 @@ pub struct Config {
     pub document: DocumentConfig,
 
     pub image: ImageGenerationConfig,
+
+    pub video: VideoGenerationConfig,
 }
 
 /// 文档配置
@@ -129,5 +131,10 @@ pub struct CategoryConfig {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ImageGenerationConfig {
+    pub model: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct VideoGenerationConfig {
     pub model: String,
 }
