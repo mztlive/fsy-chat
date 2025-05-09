@@ -4,6 +4,7 @@ use axum::BoxError;
 use axum::error_handling::HandleErrorLayer;
 use axum::http::Method;
 use axum::http::header;
+use axum::middleware;
 use axum::response::IntoResponse;
 use axum::routing::delete;
 use axum::routing::get;
@@ -17,6 +18,7 @@ use tracing::info;
 use crate::web::app_state::AppState;
 
 use super::errors::ApiResponse;
+use super::fingerprint::authorization;
 use super::handlers::chat_handler::chat_sse_handler;
 use super::handlers::chat_handler::create_session;
 use super::handlers::chat_handler::get_all_document_category;
@@ -30,7 +32,6 @@ use super::handlers::video_handler::video_generation;
 // 设置路由
 pub fn app_routes() -> Router<AppState> {
     Router::new()
-        .route("/chat/sse/{session_id}", get(chat_sse_handler))
         .route("/chat/message/{session_id}", post(post_message))
         .route("/chat/create", get(create_session))
         .route("/all/document/category", get(get_all_document_category))
@@ -39,6 +40,8 @@ pub fn app_routes() -> Router<AppState> {
         .route("/session/{session_id}", delete(remove_session))
         .route("/image/generation", post(image_generation))
         .route("/video/generation", post(video_generation))
+        .route_layer(middleware::from_fn(authorization))
+        .route("/chat/sse/{session_id}", get(chat_sse_handler))
 }
 
 pub fn create_router(app_state: AppState) -> Router {
@@ -76,6 +79,7 @@ pub fn create_router(app_state: AppState) -> Router {
                             header::ACCEPT,
                             header::CONTENT_TYPE,
                             header::ORIGIN,
+                            header::HeaderName::from_static("x-fingerprint")
                         ])
                         .allow_credentials(true),
                 ),

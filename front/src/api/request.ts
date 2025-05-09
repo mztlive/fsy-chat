@@ -1,4 +1,5 @@
 import { ApiResponse } from './types'
+import FingerprintJS from '@fingerprintjs/fingerprintjs'
 
 // 服务器基础URL
 export const BASE_URL = 'http://localhost:3001/api'
@@ -36,11 +37,16 @@ export async function request<T = any>(
         }
     }
 
+    // 获取指纹 fingerprintjs
+    const fingerprint = await FingerprintJS.load()
+    const result = await fingerprint.get()
+
     // 构建请求配置
     const fetchOptions: RequestInit = {
         method: options.method,
         headers: {
             'Content-Type': 'application/json',
+            'X-Fingerprint': result.visitorId,
             ...options.headers,
         },
         credentials: 'include', // 包含跨域请求的cookies

@@ -16,7 +16,7 @@ pub struct SessionHistory {
 
 /// 用户标识类型
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
-pub struct UserID(String);
+pub struct UserID(pub String);
 
 impl Display for UserID {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

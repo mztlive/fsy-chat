@@ -1,5 +1,5 @@
 use axum::{
-    Json, Router,
+    Extension, Json, Router,
     extract::{Path, Query, State},
     response::{
         IntoResponse,
@@ -16,7 +16,7 @@ use std::time::Duration;
 use uuid::Uuid;
 
 use crate::{
-    session_manager::SessionHistory,
+    session_manager::{SessionHistory, UserID},
     web::{
         app_state::AppState,
         errors::{ApiResponse, ApiResult, WebError},
@@ -70,11 +70,14 @@ pub async fn post_message(
     Ok(ApiResponse::<()>::success(()))
 }
 
-pub async fn session_history(State(app_state): State<AppState>) -> ApiResult<Vec<SessionHistory>> {
+pub async fn session_history(
+    State(app_state): State<AppState>,
+    Extension(user_id): Extension<UserID>,
+) -> ApiResult<Vec<SessionHistory>> {
     let session = app_state
         .kernel()
         .sessions()
-        .get_session_history(&DEFAULT_USER_ID.into())
+        .get_session_history(&user_id)
         .await;
 
     Ok(ApiResponse::success(session))
@@ -96,14 +99,11 @@ pub async fn message_history(
 pub async fn create_session(
     State(app_state): State<AppState>,
     Query(request): Query<NewSSEQuery>,
+    Extension(user_id): Extension<UserID>,
 ) -> ApiResult<NewSSEResponse> {
     let (_, session_id) = app_state
         .kernel()
-        .create_session(
-            DEFAULT_USER_ID.into(),
-            "你是热心的助手".to_string(),
-            request.category,
-        )
+        .create_session(user_id, "你是热心的助手".to_string(), request.category)
         .await?;
 
     Ok(ApiResponse::success(NewSSEResponse { session_id }))
@@ -112,10 +112,11 @@ pub async fn create_session(
 pub async fn remove_session(
     State(app_state): State<AppState>,
     Path(session_id): Path<String>,
+    Extension(user_id): Extension<UserID>,
 ) -> ApiResult<()> {
     app_state
         .kernel()
-        .remove_session(&DEFAULT_USER_ID.into(), &session_id)
+        .remove_session(&user_id, &session_id)
         .await?;
 
     Ok(ApiResponse::success(()))
@@ -177,4 +178,3 @@ pub async fn get_all_document_category(
         app_state.kernel().doc_manager().get_categories().await,
     ))
 }
-
