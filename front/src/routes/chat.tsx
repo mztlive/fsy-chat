@@ -74,7 +74,7 @@ function ChatRoute() {
     }
 
     return (
-        <div class="h-screen grid grid-cols-1 md:grid-cols-[16rem_1fr] bg-base-100 text-base-content overflow-hidden">
+        <div class="h-screen grid grid-cols-1 md:grid-cols-[16rem_1fr] bg-gray-50 text-base-content overflow-hidden">
             {/* 侧边栏遮罩 - 仅在移动端显示 */}
             <div
                 class={`fixed inset-0 bg-black/50 z-10 md:hidden ${sidebarOpen() ? 'block' : 'hidden'}`}

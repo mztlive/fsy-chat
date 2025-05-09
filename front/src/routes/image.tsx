@@ -30,9 +30,8 @@ function ImageRoute() {
     }
 
     // 生成图片
-    const handleGenerate = async () => {
-        await createImage(prompt(), ratio().width, ratio().height)
-        setPrompt('') // 清空输入框
+    const handleGenerate = async (prompt: string) => {
+        await createImage(prompt, ratio().width, ratio().height)
     }
 
     return (
@@ -55,13 +54,7 @@ function ImageRoute() {
                 {/* 创作区域 - 通过Portal固定在底部 */}
                 <Portal>
                     <div class="fixed bottom-4 left-0 right-0 p-6 z-10">
-                        <PromptInput
-                            prompt={prompt()}
-                            onPromptChange={setPrompt}
-                            onGenerate={handleGenerate}
-                            loading={isPending()}
-                            onRatioSelect={setRatio}
-                        />
+                        <PromptInput onGenerate={handleGenerate} loading={isPending()} />
 
                         <Show when={error()}>
                             <ErrorAlert message={error()?.message} />

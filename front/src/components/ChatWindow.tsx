@@ -96,7 +96,7 @@ export function ChatWindow(props: ChatWindowProps) {
                                     transform: ['translateX(-10px)', 'translateY(0)'],
                                 }}
                                 transition={{ duration: 0.5, easing: 'ease-in-out' }}
-                                class={`py-4 ${message.role === 'assistant' ? 'bg-base-100' : 'bg-base-100'}`}
+                                class="py-4"
                             >
                                 <div class="max-w-3xl mx-auto px-4 md:px-8 w-full overflow-hidden">
                                     <ChatMessage message={message} />
@@ -106,7 +106,7 @@ export function ChatWindow(props: ChatWindowProps) {
                     </For>
 
                     <Show when={props.waiting_reply}>
-                        <div id="loading" class="py-4 bg-base-100">
+                        <div id="loading" class="py-4">
                             <div class="max-w-3xl mx-auto px-4 md:px-8 w-full overflow-hidden">
                                 <div class="chat chat-start">
                                     <div class="chat-bubble bg-base-200 text-base-content">
