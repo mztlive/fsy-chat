@@ -6,7 +6,7 @@ use std::{
     sync::Arc,
 };
 
-use futures_util::{StreamExt, future::join_all};
+use futures_util::future::join_all;
 use rig::streaming::StreamingCompletionModel;
 use serde::Serialize;
 use tokio::sync::Mutex;
@@ -102,14 +102,6 @@ impl<M: StreamingCompletionModel> UserChatSessions<M> {
         self.inner.remove(session_id)
     }
 
-    /// 获取当前会话集合中的会话数量
-    ///
-    /// # 返回
-    /// * `usize` - 会话数量
-    pub fn len(&self) -> usize {
-        self.inner.len()
-    }
-
     /// 获取会话集合中的所有会话ID
     ///
     /// # 返回
@@ -146,6 +138,12 @@ impl<M: StreamingCompletionModel> Sessions<M> {
         }
     }
 
+    /// 添加一个用户的会话
+    ///
+    /// # 参数
+    /// * `user_id` - 用户ID
+    /// * `sessions` - 用户会话集合
+    #[allow(unused)]
     pub async fn add_user_session(&self, user_id: UserID, sessions: UserChatSessions<M>) {
         let mut guard = self.grouped.lock().await;
         guard.insert(user_id, sessions.clone());
