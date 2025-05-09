@@ -26,7 +26,7 @@ preamble = """
 - 专业术语使用后应附带简短解释
 """
 api_key = "sk-33e3643fd6db453c9015697413b44bae"
-chat_model = "qwen-max"
+chat_model = "deepseek-v3"
 
 # 嵌入模型配置（可选）
 [embedding]
@@ -39,7 +39,7 @@ dimensions = 1536
 [document]
 # 文档类目配置
 [[document.categories]]
-name = "客服"
+name = "行政助手"
 directory = "./docs"
 
 
@@ -47,4 +47,4 @@ directory = "./docs"
 model = "wanx2.1-t2i-plus"
 
 [video]
-model = "wanx2.1-t2v-turbo"
+model = "wanx2.1-t2v-plus"

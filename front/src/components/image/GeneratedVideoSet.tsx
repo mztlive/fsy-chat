@@ -18,28 +18,15 @@ export default function GeneratedVideoSet(props: GeneratedVideoSet) {
         // 实际删除逻辑可以在这里实现
     }
 
+    // 生成骨架屏数组
+    const skeletonItems = () => Array(1).fill(0)
+
     return (
         <div class="w-full">
-            {/* 加载状态下显示骨架屏 */}
-            <Show when={props.loading}>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {Array(6)
-                        .fill(0)
-                        .map(() => (
-                            <div class="card bg-base-100">
-                                <div class="skeleton w-full aspect-video rounded-t-box"></div>
-                                <div class="p-3">
-                                    <div class="skeleton h-4 w-4/5 mb-2"></div>
-                                    <div class="skeleton h-3 w-1/2"></div>
-                                </div>
-                            </div>
-                        ))}
-                </div>
-            </Show>
-
-            {/* 显示视频内容 */}
-            <Show when={props.videos.length > 0}>
+            {/* 显示视频内容或骨架屏 */}
+            <Show when={props.videos.length > 0 || props.loading}>
                 <div class="columns-1 sm:columns-2 lg:columns-3 gap-4 md:gap-6 space-y-4 md:space-y-6">
+                    {/* 显示已有的视频列表 - 无论是否正在加载都显示 */}
                     <For each={props.videos}>
                         {video => (
                             <Motion.div
@@ -80,6 +67,28 @@ export default function GeneratedVideoSet(props: GeneratedVideoSet) {
                             </Motion.div>
                         )}
                     </For>
+
+                    {/* 仅在loading时才显示骨架屏，作为新内容的占位 */}
+                    <Show when={props.loading}>
+                        <For each={skeletonItems()}>
+                            {(_, index) => (
+                                <Motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.3, delay: index() * 0.05 }}
+                                    class="break-inside-avoid mb-4 md:mb-6"
+                                >
+                                    <div class="card bg-base-100 shadow-sm overflow-hidden h-auto">
+                                        <div class="skeleton w-full aspect-video rounded-t-box"></div>
+                                        <div class="p-3">
+                                            <div class="skeleton h-4 w-4/5 mb-2"></div>
+                                            <div class="skeleton h-3 w-1/2"></div>
+                                        </div>
+                                    </div>
+                                </Motion.div>
+                            )}
+                        </For>
+                    </Show>
                 </div>
             </Show>
 

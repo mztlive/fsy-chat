@@ -48,10 +48,6 @@ function ImageRoute() {
                         onVideoSelect={handleVideoSelect}
                         loading={isPending()}
                     />
-
-                    <Show when={generatedVideos().length === 0 && !isPending()}>
-                        <EmptyState />
-                    </Show>
                 </div>
 
                 {/* 创作区域 - 通过Portal固定在底部 */}

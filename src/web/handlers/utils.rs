@@ -8,8 +8,8 @@ use crate::{
     web::errors::WebError,
 };
 
-const MAX_QUERY_COUNT: usize = 60;
-const QUERY_INTERVAL: Duration = Duration::from_secs(2);
+const MAX_QUERY_COUNT: usize = 120;
+const QUERY_INTERVAL: Duration = Duration::from_secs(5);
 
 pub(crate) async fn wait_generation_task<O, U>(
     kernel: &Kernel,
