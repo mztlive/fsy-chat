@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/solid-router'
-import { createEffect, createMemo, createSignal, For, onMount, untrack } from 'solid-js'
+import { createEffect, createMemo, createSignal, For, onMount, Show, untrack } from 'solid-js'
 import { ChatInput } from '../components/ChatInput'
 import { ChatWindow } from '../components/ChatWindow'
 import { SessionList } from '../components/SessionList'
 import { MenuIcon, RefreshIcon, MoreIcon, PlusIcon } from '../components/icons'
 import { useChat } from '~/hooks/chat'
 import { useChatManager } from '~/hooks/chat_manager'
+import { Dynamic, Portal } from 'solid-js/web'
+import { PromptInput } from '~/components/image'
 
 export const Route = createFileRoute('/chat')({
     validateSearch: search =>
@@ -137,14 +139,35 @@ function ChatRoute() {
                 />
 
                 {/* 聊天输入框 */}
-                <ChatInput
+                {/* <ChatInput
                     onSendMessage={chat.sendMessage}
                     disabled={chat.loading() || chatManager.createSession.isPending}
                     activeSessionId={activeSessionId() ?? ''}
                     onStartChat={() => {
                         setShowCategories(true)
                     }}
-                />
+                /> */}
+
+                <Portal>
+                    <div class="fixed bottom-4 left-0 right-0 p-6 z-10">
+                        <Show when={activeSessionId()}>
+                            <PromptInput onGenerate={chat.sendMessage} loading={chat.loading()} />
+                        </Show>
+
+                        <Show when={!activeSessionId()}>
+                            <div class="flex flex-col items-center justify-center h-full">
+                                <div class="max-w-3xl mx-auto px-4 pb-8 w-full">
+                                    <button
+                                        class="btn btn-primary w-full"
+                                        onClick={() => setShowCategories(true)}
+                                    >
+                                        开始聊天
+                                    </button>
+                                </div>
+                            </div>
+                        </Show>
+                    </div>
+                </Portal>
             </div>
 
             {/* 选择助手类型 */}

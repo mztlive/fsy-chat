@@ -1,9 +1,8 @@
 import { createFileRoute } from '@tanstack/solid-router'
 import { createSignal, Show } from 'solid-js'
-import { GeneratedImages, PromptInput, AspectRatio, EmptyState } from '../components/image'
+import { PromptInput, AspectRatio, AspectRatioSelector } from '../components/image'
 import ErrorAlert from '~/components/common/ErrorAlert'
 import { Portal } from 'solid-js/web'
-import { useImageGenerate } from '~/hooks/image_generate'
 import { useVideoGenerate } from '~/hooks/video_generate'
 import GeneratedVideoSet from '~/components/image/GeneratedVideoSet'
 
@@ -12,9 +11,6 @@ export const Route = createFileRoute('/video')({
 })
 
 function ImageRoute() {
-    // 提示词和图片生成状态
-    const [prompt, setPrompt] = createSignal('')
-
     const [ratio, setRatio] = createSignal<AspectRatio>({
         id: '1:1',
         label: '1:1',
@@ -32,9 +28,8 @@ function ImageRoute() {
     }
 
     // 生成图片
-    const handleGenerate = async () => {
-        await createVideo(prompt(), ratio().width, ratio().height)
-        setPrompt('') // 清空输入框
+    const handleGenerate = async (prompt: string) => {
+        await createVideo(prompt, ratio().width, ratio().height)
     }
 
     return (
@@ -53,14 +48,9 @@ function ImageRoute() {
                 {/* 创作区域 - 通过Portal固定在底部 */}
                 <Portal>
                     <div class="fixed bottom-4 left-0 right-0 p-6 z-10">
-                        <PromptInput
-                            prompt={prompt()}
-                            onPromptChange={setPrompt}
-                            onGenerate={handleGenerate}
-                            loading={isPending()}
-                            onRatioSelect={setRatio}
-                            mode="video"
-                        />
+                        <PromptInput onGenerate={handleGenerate} loading={isPending()}>
+                            <AspectRatioSelector mode="video" onRatioSelect={setRatio} />
+                        </PromptInput>
 
                         <Show when={error()}>
                             <ErrorAlert message={error()?.message} />

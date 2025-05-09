@@ -1,25 +1,22 @@
-import { createSignal, Match, Show, Switch } from 'solid-js'
+import { createSignal, Match, ParentProps, Show, Switch } from 'solid-js'
 import AspectRatioSelector, { AspectRatio } from './AspectRatioSelector'
 import GenerateButton from './GenerateButton'
-import { TrashIcon, XIcon } from '../icons'
+import { SendIcon, TrashIcon, XIcon } from '../icons'
 import { Motion } from 'solid-motionone'
 
-export interface PromptInputProps {
-    prompt: string
-    onPromptChange: (prompt: string) => void
-    onGenerate: () => void
+export interface PromptInputProps extends ParentProps {
+    onGenerate: (prompt: string) => void
     loading: boolean
-    onCancel?: () => void
-    onRatioSelect: (ratio: AspectRatio) => void
-    mode?: 'image' | 'video'
 }
 
 export default function PromptInput(props: PromptInputProps) {
+    const [prompt, setPrompt] = createSignal('')
+
     // 处理按键事件，Enter键触发生成
     const handleKeyPress = (e: KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault()
-            props.onGenerate()
+            props.onGenerate(prompt())
         }
     }
 
@@ -49,8 +46,8 @@ export default function PromptInput(props: PromptInputProps) {
                         class="textarea w-full p-4 resize-none text-sm bg-transparent border-none outline-none focus:outline-none focus:border-none focus:ring-0"
                         style="min-height: 80px"
                         placeholder="详细描述您想要的图像，越具体越好..."
-                        value={props.prompt}
-                        onInput={e => props.onPromptChange(e.target.value)}
+                        value={prompt()}
+                        onInput={e => setPrompt(e.target.value)}
                         onKeyPress={handleKeyPress}
                         disabled={props.loading}
                     />
@@ -58,31 +55,37 @@ export default function PromptInput(props: PromptInputProps) {
                     <div class="card-actions p-3 border-t border-base-200 flex justify-between items-center">
                         <div class="flex items-center gap-2">
                             <div class="text-xs text-base-content/60">
-                                <span class={props.prompt.length > 900 ? 'text-warning' : ''}>
-                                    {props.prompt.length}
+                                <span class={prompt().length > 900 ? 'text-warning' : ''}>
+                                    {prompt().length}
                                 </span>{' '}
                                 / 1000
                             </div>
-                            <AspectRatioSelector
+                            {/* <AspectRatioSelector
                                 onRatioSelect={props.onRatioSelect}
                                 mode={props.mode}
-                            />
+                            /> */}
+
+                            {props.children}
                         </div>
 
                         <div class="flex space-x-2">
                             <button
                                 class="btn btn-sm btn-ghost btn-square"
-                                onClick={() => props.onPromptChange('')}
-                                disabled={props.loading || !props.prompt}
+                                onClick={() => setPrompt('')}
+                                disabled={props.loading || !prompt()}
                                 title="清空输入"
                             >
                                 <TrashIcon />
                             </button>
 
-                            <GenerateButton
+                            <button
+                                class="btn btn-circle btn-sm btn-primary"
                                 disabled={props.loading}
-                                onGenerate={props.onGenerate}
-                            />
+                                title="发送消息"
+                                onClick={() => props.onGenerate(prompt())}
+                            >
+                                <SendIcon />
+                            </button>
                         </div>
                     </div>
                 </Show>
@@ -114,11 +117,7 @@ export default function PromptInput(props: PromptInputProps) {
                         }}
                     >
                         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                        <button
-                            class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200"
-                            onClick={() => props.onCancel && props.onCancel()}
-                            title="取消生成"
-                        >
+                        <button class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200">
                             <div class="bg-base-300/80 rounded-full p-1">
                                 <XIcon class="w-5 h-5 text-base-content" />
                             </div>
