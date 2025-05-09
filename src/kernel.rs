@@ -35,6 +35,15 @@ pub struct Kernel {
 }
 
 impl Kernel {
+    /// 创建OpenAI兼容客户端
+    ///
+    /// 创建一个指向阿里云DashScope兼容OpenAI接口的客户端
+    ///
+    /// # 参数
+    /// * `api_key` - API密钥
+    ///
+    /// # 返回值
+    /// 返回配置好的OpenAI客户端
     fn create_client(api_key: &str) -> openai::Client {
         openai::Client::from_url(api_key, "https://dashscope.aliyuncs.com/compatible-mode/v1")
     }
@@ -140,15 +149,17 @@ impl Kernel {
         builder.build()
     }
 
-    /// 从会话视图恢复会话状态并加入会话管理器
+    /// 从会话视图恢复聊天会话
+    ///
+    /// 使用会话视图对象重建完整的聊天会话并添加到会话管理器中
     ///
     /// # 参数
     /// * `user_id` - 用户ID
     /// * `session_id` - 会话ID
-    /// * `chat_view` - 会话视图数据
+    /// * `chat_view` - 会话视图对象，包含会话的序列化数据
     ///
     /// # 返回值
-    /// 操作成功则返回Ok，否则返回错误
+    /// 成功则返回Ok，否则返回错误
     pub async fn recovery_chatview(
         &self,
         user_id: UserID,

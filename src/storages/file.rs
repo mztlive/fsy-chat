@@ -30,6 +30,9 @@ impl FileStorage {
     ///
     /// # 参数
     /// * `path` - 存储根目录路径
+    ///
+    /// # 返回
+    /// * `FileStorage` - 新创建的文件存储实例
     pub fn new(path: String) -> Self {
         Self { base_path: path }
     }
@@ -104,6 +107,11 @@ impl FileStorage {
     ///
     /// # 返回
     /// * `Result<(), StorageError>` - 成功则返回Ok，失败则返回错误
+    ///
+    /// # 工作流程
+    /// 1. 清理过期的会话文件
+    /// 2. 遍历所有会话
+    /// 3. 将每个会话序列化并写入对应的JSON文件
     async fn save_user_sessions<M: StreamingCompletionModel>(
         &self,
         sessions: &UserChatSessions<M>,
@@ -135,6 +143,11 @@ impl FileStorage {
     ///
     /// # 返回
     /// * `Result<(String, ChatSessionView), StorageError>` - 成功则返回会话ID和会话视图，失败则返回错误
+    ///
+    /// # 工作流程
+    /// 1. 从文件名中提取会话ID
+    /// 2. 读取文件内容
+    /// 3. 反序列化为ChatSessionView对象
     async fn load_chat_session_from_file(
         &self,
         file_path: PathBuf,
@@ -160,6 +173,12 @@ impl FileStorage {
     ///
     /// # 返回
     /// * `Result<(), StorageError>` - 成功则返回Ok，失败则返回错误
+    ///
+    /// # 工作流程
+    /// 1. 从目录名称解析用户ID
+    /// 2. 读取目录中的所有JSON文件
+    /// 3. 加载每个会话文件并恢复到内核中
+    /// 4. 统计加载成功和失败的会话数量
     async fn load_user_sessions(
         &self,
         user_dir: PathBuf,
@@ -221,6 +240,11 @@ impl Storage for FileStorage {
     ///
     /// # 返回
     /// * `Result<(), StorageError>` - 成功则返回Ok，失败则返回错误
+    ///
+    /// # 工作流程
+    /// 1. 确保会话目录存在
+    /// 2. 遍历所有用户
+    /// 3. 为每个用户创建目录并保存其所有会话
     async fn persistence(&self, kernel: &Kernel) -> Result<(), StorageError> {
         // 确保目录存在
         let sessions_dir = Path::new(&self.base_path).join("sessions");
@@ -258,6 +282,12 @@ impl Storage for FileStorage {
     ///
     /// # 返回
     /// * `Result<(), StorageError>` - 成功则返回Ok，失败则返回错误
+    ///
+    /// # 工作流程
+    /// 1. 检查sessions目录是否存在
+    /// 2. 遍历所有用户目录
+    /// 3. 加载每个用户的所有会话
+    /// 4. 记录总共加载的会话数量
     async fn load(&self, kernel: &Kernel) -> Result<(), StorageError> {
         let sessions_dir = Path::new(&self.base_path).join("sessions");
 
@@ -300,6 +330,10 @@ impl Storage for FileStorage {
 ///
 /// # 返回
 /// * `Result<UserID, StorageError>` - 成功则返回用户ID，失败则返回错误
+///
+/// # 工作流程
+/// 1. 从目录名中提取用户ID字符串
+/// 2. 转换为UserID类型
 fn parse_user_id_from_directory(user_dir: &PathBuf) -> Result<UserID, StorageError> {
     let user_id = user_dir
         .file_name()

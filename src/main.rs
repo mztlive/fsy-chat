@@ -63,63 +63,74 @@ fn load_config(path: &PathBuf) -> AppResult<Config> {
     Ok(config)
 }
 
+/// 从文件系统加载聊天会话到内核中
+///
+/// 从文件存储中恢复之前保存的所有聊天会话到系统内核
+///
+/// # 参数
+/// * `kernel` - 系统内核实例
+///
+/// # 示例
+/// ```
+/// use fsy_ai_chat::kernel::Kernel;
+///
+/// async fn example(kernel: &Kernel) {
+///     load_chat_sessions(kernel).await;
+///     println!("会话加载完成");
+/// }
+/// ```
+async fn load_chat_sessions(kernel: &Kernel) {
+    // 创建文件存储并加载会话
+    let storage = FileStorage::new("./data".to_string());
+
+    match storage.load(kernel).await {
+        Ok(_) => {
+            info!("聊天会话加载完成");
+        }
+        Err(e) => {
+            info!("加载会话时发生错误: {}", e);
+        }
+    }
+}
+
 /// 定期持久化聊天会话
 ///
 /// 启动一个后台任务，定期将聊天会话状态保存到文件系统
 ///
 /// # 参数
-/// * `app_state` - 应用状态，包含聊天会话管理器
+/// * `kernel` - 系统内核实例，包含需要持久化的会话数据
 ///
 /// # 示例
 /// ```
-/// use fsy_ai_chat::web::AppState;
+/// use fsy_ai_chat::kernel::Kernel;
 ///
-/// async fn example(app_state: AppState) {
-///     dump_chat_sessions(app_state).await;
+/// async fn example(kernel: &Kernel) {
+///     dump_chat_sessions(kernel).await;
 /// }
 /// ```
-async fn dump_chat_sessions(app_state: &Kernel) {
-    let file_storage = FileStorage::new("./".to_string());
+async fn dump_chat_sessions(kernel: &Kernel) {
+    use tokio::time::{Duration, interval};
 
-    info!("启动聊天会话持久化任务");
-    // 创建一个无限循环，每5秒执行一次持久化操作
+    // 创建文件存储
+    let storage = FileStorage::new("./data".to_string());
+
+    // 创建30秒间隔的定时器
+    let mut interval = interval(Duration::from_secs(30));
+
     loop {
-        info!("开始持久化聊天会话");
-        let result = file_storage.persistence(app_state).await;
-        match result {
-            Ok(_) => info!("聊天会话持久化成功"),
-            Err(e) => tracing::error!("聊天会话持久化失败: {}", e),
+        // 等待下一个时间点
+        interval.tick().await;
+
+        // 持久化会话
+        match storage.persistence(kernel).await {
+            Ok(_) => {
+                info!("聊天会话持久化完成");
+            }
+            Err(e) => {
+                info!("持久化会话时发生错误: {}", e);
+            }
         }
-
-        // 等待5秒
-        tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
     }
-}
-
-/// 加载持久化的聊天会话
-///
-/// 从文件系统加载之前保存的聊天会话状态
-///
-/// # 参数
-/// * `app_state` - 应用状态，包含聊天会话管理器
-///
-/// # 示例
-/// ```
-/// use fsy_ai_chat::web::AppState;
-///
-/// async fn example(app_state: AppState) {
-///     load_chat_sessions(app_state).await;
-/// }
-/// ```
-async fn load_chat_sessions(app_state: &Kernel) {
-    let file_storage = FileStorage::new("./".to_string());
-
-    file_storage
-        .load(app_state)
-        .await
-        .expect("加载聊天会话失败");
-
-    info!("聊天会话加载完成");
 }
 
 /// 启动Web服务器
@@ -128,7 +139,6 @@ async fn load_chat_sessions(app_state: &Kernel) {
 ///
 /// # 参数
 /// * `config` - 应用配置
-/// * `doc_manager` - 文档管理器
 /// * `port` - Web服务器监听端口
 ///
 /// # 返回值
@@ -137,13 +147,9 @@ async fn load_chat_sessions(app_state: &Kernel) {
 /// # 示例
 /// ```
 /// use fsy_ai_chat::config::Config;
-/// use fsy_ai_chat::document_loader::DocumentManager;
 ///
-/// async fn example(
-///     config: Config,
-///     doc_manager: DocumentManager
-/// ) -> Result<(), Box<dyn std::error::Error>> {
-///     start_web_server(config, doc_manager, 3000).await?;
+/// async fn example(config: Config) -> Result<(), Box<dyn std::error::Error>> {
+///     start_web_server(config, 3000).await?;
 ///     Ok(())
 /// }
 /// ```

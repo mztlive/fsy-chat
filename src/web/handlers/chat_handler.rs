@@ -24,29 +24,55 @@ use crate::{
 
 const DEFAULT_USER_ID: &str = "default";
 
-// 请求体结构
+/// 聊天请求结构体
+///
+/// 包含用户发送的消息内容
 #[derive(Debug, Deserialize)]
 pub struct ChatRequest {
+    /// 消息内容
     pub message: String,
 }
 
-// 响应体结构
+/// 聊天响应结构体
+///
+/// 包含会话ID和响应消息
 #[derive(Debug, Serialize)]
 pub struct ChatResponse {
+    /// 会话ID
     pub session_id: String,
+    /// 响应消息内容
     pub message: String,
 }
 
+/// 创建会话请求查询参数
+///
+/// 包含可选的文档类别
 #[derive(Debug, Deserialize)]
 pub struct NewSSEQuery {
+    /// 可选的文档类别
     pub category: Option<String>,
 }
 
+/// 新会话响应结构体
+///
+/// 包含创建的会话ID
 #[derive(Debug, Serialize)]
 pub struct NewSSEResponse {
+    /// 会话ID
     pub session_id: String,
 }
 
+/// 发送消息处理函数
+///
+/// 接收用户消息并发送到指定会话，触发AI响应
+///
+/// # 参数
+/// * `app_state` - 应用状态
+/// * `session_id` - 会话ID
+/// * `request` - 包含消息内容的请求体
+///
+/// # 返回值
+/// 成功则返回空的成功响应，失败则返回错误
 pub async fn post_message(
     State(app_state): State<AppState>,
     Path(session_id): Path<String>,
@@ -69,6 +95,16 @@ pub async fn post_message(
     Ok(ApiResponse::<()>::success(()))
 }
 
+/// 获取会话历史处理函数
+///
+/// 获取当前用户的所有会话历史记录
+///
+/// # 参数
+/// * `app_state` - 应用状态
+/// * `user_id` - 用户ID
+///
+/// # 返回值
+/// 成功则返回会话历史列表，失败则返回错误
 pub async fn session_history(
     State(app_state): State<AppState>,
     Extension(user_id): Extension<UserID>,
@@ -82,6 +118,16 @@ pub async fn session_history(
     Ok(ApiResponse::success(session))
 }
 
+/// 获取消息历史处理函数
+///
+/// 获取指定会话的所有消息历史
+///
+/// # 参数
+/// * `app_state` - 应用状态
+/// * `session_id` - 会话ID
+///
+/// # 返回值
+/// 成功则返回消息历史列表，失败则返回错误
 pub async fn message_history(
     State(app_state): State<AppState>,
     Path(session_id): Path<String>,
@@ -95,6 +141,17 @@ pub async fn message_history(
     Ok(ApiResponse::success(session.get_history().await))
 }
 
+/// 创建新会话处理函数
+///
+/// 创建一个新的聊天会话
+///
+/// # 参数
+/// * `app_state` - 应用状态
+/// * `request` - 包含可选文档类别的查询参数
+/// * `user_id` - 用户ID
+///
+/// # 返回值
+/// 成功则返回包含会话ID的响应，失败则返回错误
 pub async fn create_session(
     State(app_state): State<AppState>,
     Query(request): Query<NewSSEQuery>,
@@ -108,6 +165,17 @@ pub async fn create_session(
     Ok(ApiResponse::success(NewSSEResponse { session_id }))
 }
 
+/// 删除会话处理函数
+///
+/// 删除指定的聊天会话
+///
+/// # 参数
+/// * `app_state` - 应用状态
+/// * `session_id` - 要删除的会话ID
+/// * `user_id` - 用户ID
+///
+/// # 返回值
+/// 成功则返回空的成功响应，失败则返回错误
 pub async fn remove_session(
     State(app_state): State<AppState>,
     Path(session_id): Path<String>,

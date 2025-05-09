@@ -62,6 +62,8 @@ impl VideoGenerationModel {
 
 #[cfg(test)]
 mod tests {
+    use crate::aliyun::media::schemes::{Text2VideoInput, Text2VideoParameters};
+
     use super::*;
 
     #[tokio::test]
