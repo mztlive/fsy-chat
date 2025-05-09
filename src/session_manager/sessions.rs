@@ -1,4 +1,10 @@
-use std::{collections::HashMap, fmt::Display, ops::Deref, path::Path, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Display,
+    ops::Deref,
+    path::Path,
+    sync::Arc,
+};
 
 use futures_util::{StreamExt, future::join_all};
 use rig::streaming::StreamingCompletionModel;
@@ -102,6 +108,14 @@ impl<M: StreamingCompletionModel> UserChatSessions<M> {
     /// * `usize` - 会话数量
     pub fn len(&self) -> usize {
         self.inner.len()
+    }
+
+    /// 获取会话集合中的所有会话ID
+    ///
+    /// # 返回
+    /// * `HashSet<String>` - 包含所有会话ID的集合
+    pub fn session_ids(&self) -> HashSet<String> {
+        self.inner.keys().cloned().collect()
     }
 }
 
