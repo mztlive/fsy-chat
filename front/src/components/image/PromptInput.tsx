@@ -1,6 +1,4 @@
-import { createSignal, Match, ParentProps, Show, Switch } from 'solid-js'
-import AspectRatioSelector, { AspectRatio } from './AspectRatioSelector'
-import GenerateButton from './GenerateButton'
+import { createSignal, ParentProps, Show } from 'solid-js'
 import { SendIcon, TrashIcon, XIcon } from '../icons'
 import { Motion } from 'solid-motionone'
 
@@ -60,10 +58,6 @@ export default function PromptInput(props: PromptInputProps) {
                                 </span>{' '}
                                 / 1000
                             </div>
-                            {/* <AspectRatioSelector
-                                onRatioSelect={props.onRatioSelect}
-                                mode={props.mode}
-                            /> */}
 
                             {props.children}
                         </div>

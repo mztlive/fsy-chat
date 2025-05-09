@@ -1,6 +1,12 @@
 import { createFileRoute } from '@tanstack/solid-router'
 import { createSignal, Show } from 'solid-js'
-import { GeneratedImages, PromptInput, AspectRatio, EmptyState } from '../components/image'
+import {
+    GeneratedImages,
+    PromptInput,
+    AspectRatio,
+    EmptyState,
+    AspectRatioSelector,
+} from '../components/image'
 import ErrorAlert from '~/components/common/ErrorAlert'
 import { Portal } from 'solid-js/web'
 import { useImageGenerate } from '~/hooks/image_generate'
@@ -10,9 +16,6 @@ export const Route = createFileRoute('/image')({
 })
 
 function ImageRoute() {
-    // 提示词和图片生成状态
-    const [prompt, setPrompt] = createSignal('')
-
     const [ratio, setRatio] = createSignal<AspectRatio>({
         id: '1:1',
         label: '1:1',
@@ -54,7 +57,9 @@ function ImageRoute() {
                 {/* 创作区域 - 通过Portal固定在底部 */}
                 <Portal>
                     <div class="fixed bottom-4 left-0 right-0 p-6 z-10">
-                        <PromptInput onGenerate={handleGenerate} loading={isPending()} />
+                        <PromptInput onGenerate={handleGenerate} loading={isPending()}>
+                            <AspectRatioSelector mode="image" onRatioSelect={setRatio} />
+                        </PromptInput>
 
                         <Show when={error()}>
                             <ErrorAlert message={error()?.message} />

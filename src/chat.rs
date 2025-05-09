@@ -70,9 +70,7 @@ impl<M: StreamingCompletionModel> ChatSession<M> {
     ///
     /// # 参数
     /// * `view` - 会话视图对象
-    /// * `config` - 代理配置
-    /// * `embedding_config` - 可选的嵌入模型配置
-    /// * `document_manager` - 可选的文档管理器
+    /// * `agent` - AI代理
     ///
     /// # 返回值
     /// 返回恢复的聊天会话，如果恢复过程中发生错误则返回错误
@@ -80,16 +78,13 @@ impl<M: StreamingCompletionModel> ChatSession<M> {
     /// # 示例
     /// ```
     /// use fsy_ai_chat::chat::{ChatSession, ChatSessionView};
-    /// use fsy_ai_chat::agent::{AgentConfig, EmbeddingConfig};
-    /// use fsy_ai_chat::document_loader::DocumentManager;
+    /// use rig::agent::Agent;
     ///
     /// async fn example(
     ///     view: ChatSessionView,
-    ///     config: AgentConfig,
-    ///     embedding_config: Option<EmbeddingConfig>,
-    ///     doc_manager: Option<DocumentManager>
-    /// ) -> Result<ChatSession, Box<dyn std::error::Error>> {
-    ///     let session = ChatSession::from_view(view, config, embedding_config, doc_manager).await?;
+    ///     agent: Agent<impl StreamingCompletionModel>
+    /// ) -> Result<ChatSession<impl StreamingCompletionModel>, Box<dyn std::error::Error>> {
+    ///     let session = ChatSession::from_view(view, agent).await?;
     ///     Ok(session)
     /// }
     /// ```
@@ -107,9 +102,8 @@ impl<M: StreamingCompletionModel> ChatSession<M> {
     /// 创建一个新的聊天会话
     ///
     /// # 参数
-    /// * `config` - 代理配置
-    /// * `embedding_config` - 可选的嵌入模型配置
-    /// * `document_manager` - 可选的文档管理器
+    /// * `agent` - AI代理
+    /// * `preamble` - 会话预设
     /// * `doc_category` - 可选的文档类别
     ///
     /// # 返回值
@@ -118,15 +112,12 @@ impl<M: StreamingCompletionModel> ChatSession<M> {
     /// # 示例
     /// ```
     /// use fsy_ai_chat::chat::ChatSession;
-    /// use fsy_ai_chat::agent::{AgentConfig, EmbeddingConfig};
-    /// use fsy_ai_chat::document_loader::DocumentManager;
+    /// use rig::agent::Agent;
     ///
     /// async fn example(
-    ///     config: AgentConfig,
-    ///     embedding_config: Option<EmbeddingConfig>,
-    ///     doc_manager: Option<DocumentManager>
-    /// ) -> Result<ChatSession, Box<dyn std::error::Error>> {
-    ///     let session = ChatSession::new(config, embedding_config, doc_manager, None).await?;
+    ///     agent: Agent<impl StreamingCompletionModel>
+    /// ) -> Result<ChatSession<impl StreamingCompletionModel>, Box<dyn std::error::Error>> {
+    ///     let session = ChatSession::new(agent, "欢迎使用AI助手".to_string(), None).await?;
     ///     Ok(session)
     /// }
     /// ```
@@ -157,7 +148,7 @@ impl<M: StreamingCompletionModel> ChatSession<M> {
     /// ```
     /// use fsy_ai_chat::chat::ChatSession;
     ///
-    /// async fn example(session: ChatSession) {
+    /// async fn example(session: ChatSession<impl StreamingCompletionModel>) {
     ///     let history = session.get_history().await;
     ///     println!("会话历史消息数: {}", history.len());
     /// }
@@ -172,11 +163,12 @@ impl<M: StreamingCompletionModel> ChatSession<M> {
     /// ```
     /// use fsy_ai_chat::chat::ChatSession;
     ///
-    /// async fn example(mut session: ChatSession) {
+    /// async fn example(mut session: ChatSession<impl StreamingCompletionModel>) {
     ///     session.clear_history().await;
     ///     assert_eq!(session.get_history().await.len(), 0);
     /// }
     /// ```
+    #[allow(dead_code)]
     pub async fn clear_history(&mut self) {
         self.history.write().await.clear();
     }
@@ -191,7 +183,7 @@ impl<M: StreamingCompletionModel> ChatSession<M> {
     /// use fsy_ai_chat::chat::ChatSession;
     /// use rig::message::Message;
     ///
-    /// async fn example(mut session: ChatSession) {
+    /// async fn example(mut session: ChatSession<impl StreamingCompletionModel>) {
     ///     let new_history = vec![
     ///         Message::user("你好"),
     ///         Message::assistant("你好！有什么可以帮助你的吗？")
@@ -213,10 +205,11 @@ impl<M: StreamingCompletionModel> ChatSession<M> {
     /// use fsy_ai_chat::chat::ChatSession;
     /// use rig::message::Message;
     ///
-    /// async fn example(mut session: ChatSession) {
+    /// async fn example(mut session: ChatSession<impl StreamingCompletionModel>) {
     ///     session.add_to_history(Message::user("新的问题")).await;
     /// }
     /// ```
+    #[allow(dead_code)]
     pub async fn add_to_history(&mut self, message: Message) {
         self.history.write().await.push(message);
     }
@@ -229,7 +222,7 @@ impl<M: StreamingCompletionModel> ChatSession<M> {
     /// ```
     /// use fsy_ai_chat::chat::ChatSession;
     ///
-    /// async fn example(mut session: ChatSession) {
+    /// async fn example(mut session: ChatSession<impl StreamingCompletionModel>) {
     ///     session.do_summary().await;
     ///     println!("会话摘要: {}", session.summary().await);
     /// }
@@ -257,7 +250,7 @@ impl<M: StreamingCompletionModel> ChatSession<M> {
     /// ```
     /// use fsy_ai_chat::chat::ChatSession;
     ///
-    /// async fn example(session: ChatSession) {
+    /// async fn example(session: ChatSession<impl StreamingCompletionModel>) {
     ///     let last_message_time = session.last_message_at().await;
     ///     println!("距离上次消息已过去: {}秒", last_message_time.elapsed().as_secs());
     /// }
@@ -275,7 +268,7 @@ impl<M: StreamingCompletionModel> ChatSession<M> {
     /// ```
     /// use fsy_ai_chat::chat::ChatSession;
     ///
-    /// async fn example(session: ChatSession) {
+    /// async fn example(session: ChatSession<impl StreamingCompletionModel>) {
     ///     let summary = session.summary().await;
     ///     println!("会话摘要: {}", summary);
     /// }
@@ -294,7 +287,7 @@ impl<M: StreamingCompletionModel> ChatSession<M> {
     /// use fsy_ai_chat::chat::ChatSession;
     /// use tokio::sync::broadcast;
     ///
-    /// async fn example(session: ChatSession) {
+    /// async fn example(session: ChatSession<impl StreamingCompletionModel>) {
     ///     let mut receiver = session.subscribe();
     ///     tokio::spawn(async move {
     ///         while let Ok(message) = receiver.recv().await {
@@ -321,7 +314,7 @@ impl<M: StreamingCompletionModel> ChatSession<M> {
     /// use fsy_ai_chat::chat::ChatSession;
     /// use uuid::Uuid;
     ///
-    /// async fn example(mut session: ChatSession) -> Result<(), Box<dyn std::error::Error>> {
+    /// async fn example(mut session: ChatSession<impl StreamingCompletionModel>) -> Result<(), Box<dyn std::error::Error>> {
     ///     let message_id = Uuid::new_v4().to_string();
     ///     session.send_message("你好，AI助手", message_id).await?;
     ///     Ok(())
@@ -382,7 +375,7 @@ impl<M: StreamingCompletionModel> ChatSession<M> {
     /// ```
     /// use fsy_ai_chat::chat::ChatSession;
     ///
-    /// async fn example(session: ChatSession) -> Result<(), Box<dyn std::error::Error>> {
+    /// async fn example(session: ChatSession<impl StreamingCompletionModel>) -> Result<(), Box<dyn std::error::Error>> {
     ///     let result = session.handle_tool_call("add", r#"{"x": 5, "y": 3}"#.to_string()).await;
     ///     match result {
     ///         Ok(value) => println!("工具调用结果: {}", value),
@@ -391,6 +384,7 @@ impl<M: StreamingCompletionModel> ChatSession<M> {
     ///     Ok(())
     /// }
     /// ```
+    #[allow(dead_code)]
     pub async fn handle_tool_call(&self, name: &str, args: String) -> Result<String, String> {
         self.agent
             .tools
