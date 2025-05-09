@@ -8,8 +8,7 @@ use std::convert::From;
 use crate::aliyun::{
     Client,
     scheme::{
-        AliyunError, AsyncGenerationOutput, AsyncGenerationSuccessResponse,
-        AsyncImageGenerationResponse, GenerationRequest,
+        AliyunError, AsyncGenerationOutput, GenerationRequest,
     },
 };
 

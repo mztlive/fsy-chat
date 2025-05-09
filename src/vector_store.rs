@@ -9,7 +9,7 @@ use rig::OneOrMany;
 use rig::embeddings::{Embedding, EmbeddingModel, EmbeddingsBuilder};
 use rig::vector_store::in_memory_store::InMemoryVectorStore;
 use tokio::sync::RwLock;
-use tracing::{error, info};
+use tracing::error;
 
 /// 向量存储管理器
 ///

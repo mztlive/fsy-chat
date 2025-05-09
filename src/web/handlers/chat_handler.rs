@@ -1,11 +1,10 @@
 use axum::{
-    Extension, Json, Router,
+    Extension, Json,
     extract::{Path, Query, State},
     response::{
         IntoResponse,
         sse::{Event, Sse},
     },
-    routing::{delete, get, post},
 };
 
 use rig::message::Message;

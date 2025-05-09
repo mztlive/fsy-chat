@@ -1,8 +1,3 @@
-/// 阿里云图像生成API模块
-/// 实现了与阿里云AI图像生成服务的交互功能
-use rig::image_generation::{
-    ImageGenerationError, ImageGenerationRequest, ImageGenerationResponse,
-};
 use std::convert::From;
 
 use crate::aliyun::{
@@ -10,7 +5,7 @@ use crate::aliyun::{
     scheme::{AliyunError, AsyncGenerationOutput, GenerationRequest},
 };
 
-use super::schemes::{Text2VideoGenerationRequest, Text2VideoInput, Text2VideoParameters};
+use super::schemes::Text2VideoGenerationRequest;
 
 // pub type Text2VideoGenerationRequest = GenerationRequest<Text2VideoInput, Text2VideoParameters>;
 

@@ -9,7 +9,7 @@ use crate::{
     aliyun::{
         client::Client as AliyunClient,
         media::schemes::{
-            ImageTaskQueryOutput, Text2ImageTaskUsage, Text2VideoGenerationRequest,
+            Text2VideoGenerationRequest,
             Text2VideoInput, Text2VideoParameters,
         },
         scheme::{TaskOutput, TaskQueryResponse},

@@ -1,12 +1,12 @@
 use axum::{
-    extract::{Request, State},
+    extract::Request,
     middleware::Next,
     response::{IntoResponse, Response},
 };
 
 use crate::session_manager::UserID;
 
-use super::{AppState, errors::ApiResponse};
+use super::errors::ApiResponse;
 
 /// 授权中间件
 ///
