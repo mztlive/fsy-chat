@@ -8,10 +8,7 @@ use serde::de::DeserializeOwned;
 use crate::{
     aliyun::{
         client::Client as AliyunClient,
-        media::schemes::{
-            Text2VideoGenerationRequest,
-            Text2VideoInput, Text2VideoParameters,
-        },
+        media::schemes::{Text2VideoGenerationRequest, Text2VideoInput, Text2VideoParameters},
         scheme::{TaskOutput, TaskQueryResponse},
     },
     chat::{ChatSession, ChatSessionView},

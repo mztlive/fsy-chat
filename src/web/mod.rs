@@ -1,8 +1,8 @@
 mod app_state;
 mod errors;
+mod fingerprint;
 pub mod handlers;
 mod routes;
-mod fingerprint;
 
 pub use app_state::*;
 pub use routes::*;

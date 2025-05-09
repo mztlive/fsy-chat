@@ -7,9 +7,7 @@ use std::convert::From;
 
 use crate::aliyun::{
     Client,
-    scheme::{
-        AliyunError, AsyncGenerationOutput, GenerationRequest,
-    },
+    scheme::{AliyunError, AsyncGenerationOutput, GenerationRequest},
 };
 
 /// 阿里云图像生成模型
