@@ -149,14 +149,14 @@ function ChatRoute() {
                 /> */}
 
                 <Portal>
-                    <div class="fixed bottom-4 left-0 right-0 p-6 z-10">
+                    <div class="fixed bottom-4 left-0 md:left-[16rem] right-0 p-6 z-10 flex justify-center">
                         <Show when={activeSessionId()}>
                             <PromptInput onGenerate={chat.sendMessage} loading={chat.loading()} />
                         </Show>
 
                         <Show when={!activeSessionId()}>
                             <div class="flex flex-col items-center justify-center h-full">
-                                <div class="max-w-3xl mx-auto px-4 pb-8 w-full">
+                                <div class="max-w-3xl px-4 pb-8 w-full">
                                     <button
                                         class="btn btn-primary w-full"
                                         onClick={() => setShowCategories(true)}
