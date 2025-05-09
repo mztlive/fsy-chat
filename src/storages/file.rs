@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
@@ -54,47 +55,41 @@ impl FileStorage {
         user_dir: &PathBuf,
         sessions: &UserChatSessions<M>,
     ) -> Result<(), StorageError> {
-        let session_ids = sessions.session_ids();
+        let session_ids: HashSet<String> = sessions.session_ids().into_iter().collect();
 
-        // 收集目录中的JSON文件并筛选出需要删除的文件
+        // 收集目录中的所有JSON文件ID
+        let mut file_session_ids = HashSet::new();
+        let mut file_paths = HashMap::new();
+
         let mut read_dir = fs::read_dir(user_dir).await?;
-        let mut to_delete = Vec::new();
-
         while let Some(entry) = read_dir.next_entry().await? {
             let path = entry.path();
 
-            // 只处理JSON文件
-            if !path.is_file() || path.extension().and_then(|ext| ext.to_str()) != Some("json") {
-                continue;
-            }
-
-            // 安全地提取文件名
-            if let Some(file_name) = path.file_name().and_then(|name| name.to_str()) {
-                let file_name = file_name.to_string();
-
-                // 如果会话ID不在内存中，加入待删除列表
-                if !session_ids.contains(&file_name.replace(".json", "")) {
-                    to_delete.push(path);
+            if path.is_file() && path.extension().and_then(|ext| ext.to_str()) == Some("json") {
+                if let Some(file_name) = path.file_name().and_then(|name| name.to_str()) {
+                    let session_id = file_name.replace(".json", "");
+                    file_session_ids.insert(session_id.clone());
+                    file_paths.insert(session_id, path);
                 }
             }
         }
 
-        // 删除过期文件
-        for path in to_delete {
-            let delete_path = path.with_file_name(format!(
-                "{}.delete",
-                path.file_name()
-                    .and_then(|n| n.to_str())
-                    .unwrap_or("unknown")
-            ));
+        // 计算差集：文件中存在但内存中不存在的会话ID
+        let to_delete_ids = file_session_ids.difference(&session_ids);
 
-            match fs::rename(&path, &delete_path).await {
-                Err(e) => {
+        // 标记过期文件
+        for id in to_delete_ids {
+            if let Some(path) = file_paths.get(id) {
+                let delete_path = path.with_file_name(format!(
+                    "{}.delete",
+                    path.file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("unknown")
+                ));
+
+                fs::rename(&path, &delete_path).await.unwrap_or_else(|e| {
                     tracing::warn!("标记过期会话文件失败: {:?}, 错误: {}", path, e);
-                }
-                Ok(_) => {
-                    tracing::debug!("已标记过期会话文件: {:?} -> {:?}", path, delete_path);
-                }
+                });
             }
         }
 
