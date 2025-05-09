@@ -8,7 +8,7 @@ import WindowErrorAlert from './WindowErrorAlert'
 interface ChatWindowProps {
     messages: Message[]
     waiting_reply?: boolean
-    sseError: string
+    sseError: string | null
     isCreatingSession: boolean
 }
 
@@ -33,7 +33,7 @@ export function ChatWindow(props: ChatWindowProps) {
     })
 
     return (
-        <div class="flex-1 overflow-y-auto overflow-x-hidden">
+        <div class="flex-1 overflow-y-auto overflow-x-hidden h-full">
             <Show when={props.sseError}>
                 <WindowErrorAlert sseError={props.sseError} />
             </Show>

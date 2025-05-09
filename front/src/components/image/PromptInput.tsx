@@ -45,7 +45,7 @@ export default function PromptInput(props: PromptInputProps) {
                     <textarea
                         class="textarea w-full p-4 resize-none text-sm bg-transparent border-none outline-none focus:outline-none focus:border-none focus:ring-0"
                         style="min-height: 80px"
-                        placeholder="详细描述您想要的图像，越具体越好..."
+                        placeholder="输入您的任意想法，越详细越好..."
                         value={prompt()}
                         onInput={e => setPrompt(e.target.value)}
                         onKeyPress={handleKeyPress}

@@ -1,7 +1,7 @@
 import { Motion } from 'solid-motionone'
 
 interface WindowErrorAlertProps {
-    sseError: string
+    sseError: string | null
 }
 
 const WindowErrorAlert = (props: WindowErrorAlertProps) => {

@@ -1,13 +1,9 @@
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/solid-router'
-import { createEffect, createMemo, createSignal, For, onMount, Show, untrack } from 'solid-js'
-import { ChatInput } from '../components/ChatInput'
-import { ChatWindow } from '../components/ChatWindow'
+import { createEffect, createMemo, createSignal, For, untrack } from 'solid-js'
 import { SessionList } from '../components/SessionList'
-import { MenuIcon, RefreshIcon, MoreIcon, PlusIcon } from '../components/icons'
 import { useChat } from '~/hooks/chat'
 import { useChatManager } from '~/hooks/chat_manager'
-import { Dynamic, Portal } from 'solid-js/web'
-import { PromptInput } from '~/components/image'
+import ChatContent from '~/components/ChatContent'
 
 export const Route = createFileRoute('/chat')({
     validateSearch: search =>
@@ -78,7 +74,7 @@ function ChatRoute() {
     }
 
     return (
-        <div class="h-screen flex bg-base-100 text-base-content overflow-hidden">
+        <div class="h-screen grid grid-cols-1 md:grid-cols-[16rem_1fr] bg-base-100 text-base-content overflow-hidden">
             {/* 侧边栏遮罩 - 仅在移动端显示 */}
             <div
                 class={`fixed inset-0 bg-black/50 z-10 md:hidden ${sidebarOpen() ? 'block' : 'hidden'}`}
@@ -88,9 +84,10 @@ function ChatRoute() {
             {/* 侧边栏 */}
             <div
                 class={`
-          w-64 bg-base-100 border-r border-base-300/30 h-screen flex-shrink-0 
-          fixed md:static z-20 transition-transform ${sidebarOpen() ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-        `}
+                bg-base-100 border-r border-base-300/30 h-screen
+                fixed md:static z-20 w-64 transition-transform 
+                ${sidebarOpen() ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                `}
             >
                 <SessionList
                     sessions={chatManager.sessionHistory.data}
@@ -103,74 +100,18 @@ function ChatRoute() {
             </div>
 
             {/* 主要内容区域 */}
-            <div class="flex-1 flex flex-col relative h-screen overflow-hidden w-full md:w-[calc(100%-16rem)]">
-                {/* 顶部栏 */}
-                <div class="h-14 border-b border-base-300/30 flex items-center px-4 gap-4">
-                    {/* 移动端菜单按钮 */}
-                    <button
-                        class="md:hidden btn btn-sm btn-square btn-ghost"
-                        onClick={toggleSidebar}
-                    >
-                        <MenuIcon />
-                    </button>
+            <ChatContent
+                messages={chat.messages}
+                loading={chat.loading()}
+                sseError={chat.sseError()}
+                isCreatingSession={chatManager.createSession.isPending}
+                activeSessionId={activeSessionId()}
+                onSendMessage={chat.sendMessage}
+                onStartChat={() => setShowCategories(true)}
+                onToggleSidebar={toggleSidebar}
+            />
 
-                    {/* 标题 */}
-                    <h1 class="text-xl font-medium">Fsy-Chat</h1>
-
-                    <div class="flex-1"></div>
-
-                    {/* 刷新按钮 */}
-                    <button
-                        class="btn btn-sm btn-square btn-ghost"
-                        onClick={() => {
-                            window.location.reload()
-                        }}
-                    >
-                        <RefreshIcon />
-                    </button>
-                </div>
-
-                {/* 聊天窗口 */}
-                <ChatWindow
-                    messages={chat.messages}
-                    waiting_reply={chat.loading() || chatManager.createSession.isPending}
-                    sseError={chat.sseError()}
-                    isCreatingSession={chatManager.createSession.isPending}
-                />
-
-                {/* 聊天输入框 */}
-                {/* <ChatInput
-                    onSendMessage={chat.sendMessage}
-                    disabled={chat.loading() || chatManager.createSession.isPending}
-                    activeSessionId={activeSessionId() ?? ''}
-                    onStartChat={() => {
-                        setShowCategories(true)
-                    }}
-                /> */}
-
-                <Portal>
-                    <div class="fixed bottom-4 left-0 md:left-[16rem] right-0 p-6 z-10 flex justify-center">
-                        <Show when={activeSessionId()}>
-                            <PromptInput onGenerate={chat.sendMessage} loading={chat.loading()} />
-                        </Show>
-
-                        <Show when={!activeSessionId()}>
-                            <div class="flex flex-col items-center justify-center h-full">
-                                <div class="max-w-3xl px-4 pb-8 w-full">
-                                    <button
-                                        class="btn btn-primary w-full"
-                                        onClick={() => setShowCategories(true)}
-                                    >
-                                        开始聊天
-                                    </button>
-                                </div>
-                            </div>
-                        </Show>
-                    </div>
-                </Portal>
-            </div>
-
-            {/* 选择助手类型 */}
+            {/* 选择助手类型 - 使用dialog作为模态框 */}
             <dialog id="categories" class="modal" open={showCategories()}>
                 <div class="modal-box">
                     <h3 class="text-lg font-bold">请选择助手类型</h3>
