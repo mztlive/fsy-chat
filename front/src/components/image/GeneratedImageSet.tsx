@@ -1,26 +1,26 @@
 import { For, Show } from 'solid-js'
 import ImageSkelon from '../common/ImageSkelon'
-import { ImageActionButtons } from '.'
+import { ImageActionButtons, AspectRatio } from '.'
 import { GeneratedImage } from '~/api/types'
-import { Motion } from 'solid-motionone'
 import GeneratedImageComponent from './GeneratedImage'
 
-export interface GeneratedImageSet {
+export interface GeneratedImageSetProps {
     images: GeneratedImage[]
     onImageSelect: (imageId: string) => void
     loading: boolean
+    aspectRatio: AspectRatio
 }
 
-export default function GeneratedImageSet(props: GeneratedImageSet) {
+export default function GeneratedImageSet(props: GeneratedImageSetProps) {
     return (
         <div>
             {/* 加载状态下显示骨架屏 */}
             <Show when={props.loading}>
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+                <div class="grid grid-cols-2 gap-4 mb-8">
                     {Array(4)
                         .fill(0)
-                        .map(() => (
-                            <ImageSkelon />
+                        .map((_, i) => (
+                            <ImageSkelon aspectRatio={props.aspectRatio} />
                         ))}
                 </div>
             </Show>
@@ -37,9 +37,18 @@ export default function GeneratedImageSet(props: GeneratedImageSet) {
                                 </div>
 
                                 {/* 第二行：图片网格 */}
-                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                <div class="grid grid-cols-2  gap-4">
                                     <For each={image.urls}>
-                                        {url => <GeneratedImageComponent url={url} />}
+                                        {url => (
+                                            <div
+                                                class="w-full"
+                                                style={{
+                                                    'aspect-ratio': `${props.aspectRatio.width}/${props.aspectRatio.height}`,
+                                                }}
+                                            >
+                                                <GeneratedImageComponent url={url} />
+                                            </div>
+                                        )}
                                     </For>
                                 </div>
                             </div>

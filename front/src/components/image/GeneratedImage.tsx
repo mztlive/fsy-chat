@@ -49,7 +49,7 @@ const GeneratedImage = (props: GeneratedImageProps) => {
     return (
         <>
             <Motion.div
-                class="relative aspect-square overflow-hidden rounded-lg cursor-pointer hover:shadow-lg transition group"
+                class="relative w-full h-full overflow-hidden rounded-lg cursor-pointer hover:shadow-lg transition group"
                 initial={{ scale: 0.95, opacity: 0.5 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.3 }}
