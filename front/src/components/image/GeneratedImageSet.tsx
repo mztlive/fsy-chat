@@ -30,24 +30,18 @@ export default function GeneratedImageSet(props: GeneratedImageSetProps) {
                 <div class="flex flex-col gap-6">
                     <For each={props.images}>
                         {image => (
-                            <div class="flex flex-col gap-10 w-full border-b border-gray-200 pb-4">
+                            <div class="flex flex-col gap-6 w-full border-b border-gray-200 pb-4">
                                 {/* 第一行：Prompt */}
-                                <div class="text-xs text-gray-400">
-                                    {image.actual_prompt || '无提示词'}
-                                </div>
+                                <div class="text-sm">{image.actual_prompt || '无提示词'}</div>
 
                                 {/* 第二行：图片网格 */}
                                 <div class="grid grid-cols-2  gap-4">
                                     <For each={image.urls}>
                                         {url => (
-                                            <div
-                                                class="w-full"
-                                                style={{
-                                                    'aspect-ratio': `${props.aspectRatio.width}/${props.aspectRatio.height}`,
-                                                }}
-                                            >
-                                                <GeneratedImageComponent url={url} />
-                                            </div>
+                                            <GeneratedImageComponent
+                                                url={url}
+                                                aspectRatio={props.aspectRatio}
+                                            />
                                         )}
                                     </For>
                                 </div>

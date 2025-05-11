@@ -39,7 +39,7 @@ function ImageRoute() {
     }
 
     const LeftPanel = () => (
-        <div class="w-[360px] flex-shrink-0 bg-white p-6 flex flex-col space-y-4  h-full overflow-y-auto">
+        <div class="w-[360px] flex-shrink-0 bg-white p-6 flex flex-col space-y-4  h-full overflow-y-auto rounded-lg">
             <h1 class="text-xl font-semibold text-gray-800">文字作画</h1>
 
             <div class="form-control">
@@ -98,7 +98,7 @@ function ImageRoute() {
     )
 
     const RightPanel = () => (
-        <div class="flex-1 p-6 bg-gray-100 overflow-y-auto h-full">
+        <div class="flex-1 p-6 bg-white  overflow-y-auto h-full rounded-lg ml-4">
             <GeneratedImages
                 images={generatedImages()}
                 onImageSelect={handleImageSelect}
@@ -115,7 +115,7 @@ function ImageRoute() {
     )
 
     return (
-        <div class="flex h-screen max-h-screen overflow-hidden bg-gray-50">
+        <div class="flex h-screen max-h-screen overflow-hidden bg-gray-50 p-6">
             <LeftPanel />
             <RightPanel />
         </div>

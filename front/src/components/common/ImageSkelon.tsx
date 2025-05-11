@@ -5,11 +5,14 @@ interface ImageSkelonProps {
 }
 
 const ImageSkelon = (props: ImageSkelonProps) => {
+    // 解构，故意破坏响应式，可以保持这一次生成的比例
+    const { width, height } = props.aspectRatio
+
     return (
         <div
             class="skeleton rounded-box"
             style={{
-                'aspect-ratio': `${props.aspectRatio.width}/${props.aspectRatio.height}`,
+                'aspect-ratio': `${width}/${height}`,
             }}
         ></div>
     )

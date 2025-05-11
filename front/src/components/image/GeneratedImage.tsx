@@ -1,15 +1,17 @@
 import { Motion } from 'solid-motionone'
-import { ImageActionButtons } from '.'
+import { AspectRatio, ImageActionButtons } from '.'
 import { createSignal, Show } from 'solid-js'
 
 interface GeneratedImageProps {
     url: string
+    aspectRatio: AspectRatio
 }
 
 const GeneratedImage = (props: GeneratedImageProps) => {
     const [showToast, setShowToast] = createSignal(false)
     const [toastMessage, setToastMessage] = createSignal('')
     const [toastType, setToastType] = createSignal<'info' | 'success' | 'error'>('info')
+    const { width, height } = props.aspectRatio
 
     // 显示提示消息
     const showMessage = (message: string, type: 'info' | 'success' | 'error' = 'info') => {
@@ -50,6 +52,9 @@ const GeneratedImage = (props: GeneratedImageProps) => {
         <>
             <Motion.div
                 class="relative w-full h-full overflow-hidden rounded-lg cursor-pointer hover:shadow-lg transition group"
+                style={{
+                    'aspect-ratio': `${width}/${height}`,
+                }}
                 initial={{ scale: 0.95, opacity: 0.5 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.3 }}
