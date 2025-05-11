@@ -19,10 +19,9 @@ use crate::{
     web::{
         app_state::AppState,
         errors::{ApiResponse, ApiResult, WebError},
+        preambles::{ADMINISTRATIVE_ASSISTANT_PREAMBLE, get_preamble},
     },
 };
-
-const DEFAULT_USER_ID: &str = "default";
 
 /// 聊天请求结构体
 ///
@@ -159,7 +158,11 @@ pub async fn create_session(
 ) -> ApiResult<NewSSEResponse> {
     let (_, session_id) = app_state
         .kernel()
-        .create_session(user_id, "你是热心的助手".to_string(), request.category)
+        .create_session(
+            user_id,
+            get_preamble(request.category.is_some()),
+            request.category,
+        )
         .await?;
 
     Ok(ApiResponse::success(NewSSEResponse { session_id }))

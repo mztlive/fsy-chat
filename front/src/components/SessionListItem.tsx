@@ -1,5 +1,3 @@
-import { Show, splitProps } from 'solid-js'
-import { ChatSession } from '../types/chat'
 import { ChatBubbleIcon, TrashIcon } from './icons'
 import { SessionHistory } from '~/api/types'
 
@@ -15,8 +13,8 @@ export function SessionListItem(props: SessionListItemProps) {
         <div
             class={`flex items-center p-2 rounded-md cursor-pointer group my-1 ${
                 props.isActive
-                    ? 'bg-base-200 text-base-content'
-                    : 'hover:bg-base-200/40 text-base-content/80'
+                    ? 'bg-gray-200/60 text-base-content'
+                    : 'hover:bg-gray-200/40 text-base-content/80'
             }`}
             onClick={() => props.onClick(props.session.session_id)}
         >

@@ -16,13 +16,17 @@ export const Route = createFileRoute('/image')({
 })
 
 function ImageRoute() {
-    const [ratio, setRatio] = createSignal<AspectRatio>({
-        id: '1:1',
-        label: '1:1',
-        ratio: '1:1',
-        width: 1024,
-        height: 1024,
-    })
+    const aspectRatios: AspectRatio[] = [
+        { id: '1:1', label: '1:1', ratio: '1:1', width: 1024, height: 1024 },
+        { id: '16:9', label: '16:9', ratio: '16:9', width: 1440, height: 810 },
+        { id: '3:2', label: '3:2', ratio: '3:2', width: 1440, height: 960 },
+        { id: '4:3', label: '4:3', ratio: '4:3', width: 1440, height: 1080 },
+        { id: '3:4', label: '3:4', ratio: '3:4', width: 1080, height: 1440 },
+        { id: '2:3', label: '2:3', ratio: '2:3', width: 960, height: 1440 },
+        { id: '9:16', label: '9:16', ratio: '9:16', width: 810, height: 1440 },
+    ]
+
+    const [ratio, setRatio] = createSignal<AspectRatio>(aspectRatios[0])
 
     const { generatedImages, createImage, error, isPending } = useImageGenerate()
 
@@ -58,7 +62,11 @@ function ImageRoute() {
                 <Portal>
                     <div class="fixed bottom-4 left-0 right-0 p-6 z-10">
                         <PromptInput onGenerate={handleGenerate} loading={isPending()}>
-                            <AspectRatioSelector mode="image" onRatioSelect={setRatio} />
+                            <AspectRatioSelector
+                                aspectRatios={aspectRatios}
+                                onRatioSelect={setRatio}
+                                selectedRatio={ratio()}
+                            />
                         </PromptInput>
 
                         <Show when={error()}>

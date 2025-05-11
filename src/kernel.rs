@@ -46,6 +46,7 @@ impl Kernel {
     /// 返回配置好的OpenAI客户端
     fn create_client(api_key: &str) -> openai::Client {
         openai::Client::from_url(api_key, "https://dashscope.aliyuncs.com/compatible-mode/v1")
+        // openai::Client::from_url(api_key, "https://api.openai-proxy.org/v1")
     }
 
     /// 初始化文档管理器

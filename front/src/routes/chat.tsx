@@ -84,7 +84,7 @@ function ChatRoute() {
             {/* 侧边栏 */}
             <div
                 class={`
-                bg-base-100 border-r border-base-300/30 h-screen
+                bg-gray-50 border-r border-gray-200/30 h-screen
                 fixed md:static z-20 w-64 transition-transform 
                 ${sidebarOpen() ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
                 `}
@@ -95,7 +95,6 @@ function ChatRoute() {
                     onSelectSession={handleSelectSession}
                     onCreateNewSession={handleCreateNewSession}
                     onDeleteSession={handleDeleteSession}
-                    categories={[]}
                 />
             </div>
 

@@ -11,13 +11,42 @@ export const Route = createFileRoute('/video')({
 })
 
 function ImageRoute() {
-    const [ratio, setRatio] = createSignal<AspectRatio>({
-        id: '1:1',
-        label: '1:1',
-        ratio: '1:1',
-        width: 1280,
-        height: 720,
-    })
+    const aspectRatios: AspectRatio[] = [
+        {
+            id: '1280x720',
+            label: '1280x720',
+            ratio: '16:9',
+            width: 1280,
+            height: 720,
+        },
+        { id: '960x960', label: '960x960', ratio: '1:1', width: 960, height: 960 },
+        {
+            id: '720x1280',
+            label: '720x1280',
+            ratio: '9:16',
+            width: 720,
+            height: 1280,
+        },
+        {
+            id: '1088x832',
+            label: '1088x832',
+            ratio: '4:3',
+            width: 1088,
+            height: 832,
+        },
+        {
+            id: '832x1088',
+            label: '832x1088',
+            ratio: '3:4',
+            width: 832,
+            height: 1088,
+        },
+        { id: '832x480', label: '832x480', ratio: '16:9', width: 832, height: 480 },
+        { id: '624x624', label: '624x624', ratio: '1:1', width: 624, height: 624 },
+        { id: '480x832', label: '480x832', ratio: '9:16', width: 480, height: 832 },
+    ]
+
+    const [ratio, setRatio] = createSignal<AspectRatio>(aspectRatios[0])
 
     const { generatedVideos, createVideo, error, isPending } = useVideoGenerate()
 
@@ -49,7 +78,11 @@ function ImageRoute() {
                 <Portal>
                     <div class="fixed bottom-4 left-0 right-0 p-6 z-10">
                         <PromptInput onGenerate={handleGenerate} loading={isPending()}>
-                            <AspectRatioSelector mode="video" onRatioSelect={setRatio} />
+                            <AspectRatioSelector
+                                aspectRatios={aspectRatios}
+                                onRatioSelect={setRatio}
+                                selectedRatio={ratio()}
+                            />
                         </PromptInput>
 
                         <Show when={error()}>

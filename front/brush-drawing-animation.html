@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG 画笔创作动画</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 800px;
+            max-width: 95%;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .svg-container {
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            margin: 20px auto;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .controls {
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SVG 画笔创作动画</h1>
+        <div class="svg-container">
+            <svg id="drawing-area" width="700" height="500" viewBox="0 0 700 500">
+                <!-- 画笔 -->
+                <g id="brush" transform="translate(0,0)" style="transform-origin: center;">
+                    <path d="M10,15 L15,10 L20,5 L50,5 L55,10 L60,20 L60,40 L55,50 L45,55 L15,55 L5,45 L5,25 Z" 
+                          fill="#8B4513" stroke="#000" stroke-width="1.5" />
+                    <rect x="40" y="5" width="20" height="50" fill="#A0522D" />
+                    <path d="M60,20 L90,10 L90,50 L60,40 Z" fill="#DEB887" stroke="#000" stroke-width="1" />
+                    <ellipse cx="90" cy="30" rx="5" ry="20" fill="#000" />
+                    <ellipse cx="91" cy="30" rx="2" ry="10" fill="#444" />
+                </g>
+                
+                <!-- 绘制的路径 -->
+                <path id="drawn-path" d="M100,250" fill="none" stroke="#3498db" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                
+                <!-- 装饰元素 -->
+                <circle class="splash" cx="0" cy="0" r="0" fill="rgba(52, 152, 219, 0.5)" visibility="hidden" />
+                <circle class="splash" cx="0" cy="0" r="0" fill="rgba(52, 152, 219, 0.3)" visibility="hidden" />
+                <circle class="splash" cx="0" cy="0" r="0" fill="rgba(52, 152, 219, 0.2)" visibility="hidden" />
+            </svg>
+        </div>
+        <div class="controls">
+            <button id="restart-btn">重新开始</button>
+            <button id="change-pattern-btn">更换图案</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const svg = document.getElementById('drawing-area');
+            const brush = document.getElementById('brush');
+            const drawnPath = document.getElementById('drawn-path');
+            const splashes = document.querySelectorAll('.splash');
+            const restartBtn = document.getElementById('restart-btn');
+            const changePatternBtn = document.getElementById('change-pattern-btn');
+            
+            // 定义不同的绘制路径模式
+            const patterns = [
+                // 花朵图案
+                [
+                    "M100,250 C150,150 250,150 300,250 C350,350 450,350 500,250",
+                    "M300,250 C300,150 400,100 500,150 C600,200 650,300 600,400 C550,500 400,550 300,450 C200,350 150,350 100,400 C50,450 50,350 100,250",
+                    "M300,250 C350,200 400,200 450,250 C500,300 500,350 450,400 C400,450 350,450 300,400 C250,350 250,300 300,250"
+                ],
+                // 抽象艺术图案
+                [
+                    "M100,100 C200,50 300,150 400,100 C500,50 600,150 650,250",
+                    "M650,250 C600,350 500,450 400,400 C300,350 200,450 100,400",
+                    "M100,400 C150,300 250,250 350,300 C450,350 550,300 650,250"
+                ],
+                // 山水图案
+                [
+                    "M50,400 C100,350 150,380 200,350 C250,320 300,370 350,350 C400,330 450,370 500,350 C550,330 600,360 650,330",
+                    "M50,250 C100,200 150,220 200,180 C250,140 300,220 350,180 C400,140 450,200 500,160 C550,120 600,220 650,180",
+                    "M200,400 Q300,200 400,400"
+                ]
+            ];
+            
+            let currentPattern = 0;
+            let pathSegments = patterns[currentPattern];
+            let currentSegment = 0;
+            let segmentProgress = 0;
+            let drawing = false;
+            
+            // 用于获取路径上的点
+            function getPointAtLength(pathSegment, progress) {
+                const tempPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                tempPath.setAttribute('d', pathSegment);
+                const length = tempPath.getTotalLength();
+                const point = tempPath.getPointAtLength(length * progress);
+                return point;
+            }
+            
+            // 用于计算两点间的角度
+            function getAngle(x1, y1, x2, y2) {
+                return Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+            }
+            
+            // 创建水花动画
+            function createSplash(x, y) {
+                splashes.forEach((splash, index) => {
+                    splash.setAttribute('cx', x);
+                    splash.setAttribute('cy', y);
+                    splash.setAttribute('visibility', 'visible');
+                    splash.setAttribute('r', '0');
+                    
+                    // 动画效果
+                    const animation = splash.animate([
+                        { r: 0, opacity: 0.8 },
+                        { r: 5 + index * 3, opacity: 0 }
+                    ], {
+                        duration: 500 + index * 200,
+                        easing: 'ease-out'
+                    });
+                    
+                    animation.onfinish = () => {
+                        splash.setAttribute('visibility', 'hidden');
+                    };
+                });
+            }
+            
+            // 动画函数
+            function animate() {
+                if (!drawing) return;
+                
+                if (currentSegment < pathSegments.length) {
+                    const pathSegment = pathSegments[currentSegment];
+                    segmentProgress += 0.005;
+                    
+                    if (segmentProgress >= 1) {
+                        segmentProgress = 0;
+                        currentSegment++;
+                        
+                        if (currentSegment < pathSegments.length) {
+                            // 更新绘制路径
+                            drawnPath.setAttribute('d', drawnPath.getAttribute('d') + ' ' + pathSegments[currentSegment].substring(1));
+                        } else {
+                            // 所有段都画完了
+                            setTimeout(() => {
+                                drawing = false;
+                            }, 500);
+                            return;
+                        }
+                    }
+                    
+                    // 获取当前点和下一个点
+                    const currentPoint = getPointAtLength(pathSegment, segmentProgress);
+                    const nextPoint = getPointAtLength(pathSegment, Math.min(1, segmentProgress + 0.01));
+                    
+                    // 更新画笔位置和角度
+                    const angle = getAngle(currentPoint.x, currentPoint.y, nextPoint.x, nextPoint.y);
+                    brush.setAttribute('transform', `translate(${currentPoint.x - 85}, ${currentPoint.y - 30}) rotate(${angle + 180}, 85, 30)`);
+                    
+                    // 更新路径
+                    if (segmentProgress === 0.005) {
+                        drawnPath.setAttribute('d', drawnPath.getAttribute('d') + ` L${currentPoint.x},${currentPoint.y}`);
+                    } else {
+                        const d = drawnPath.getAttribute('d');
+                        drawnPath.setAttribute('d', d.substring(0, d.lastIndexOf('L')) + ` L${currentPoint.x},${currentPoint.y}`);
+                    }
+                    
+                    // 偶尔添加水花效果
+                    if (Math.random() < 0.05) {
+                        createSplash(currentPoint.x, currentPoint.y);
+                    }
+                    
+                    requestAnimationFrame(animate);
+                }
+            }
+            
+            // 开始绘制
+            function startDrawing() {
+                // 重置
+                drawnPath.setAttribute('d', `M${getPointAtLength(pathSegments[0], 0).x},${getPointAtLength(pathSegments[0], 0).y}`);
+                currentSegment = 0;
+                segmentProgress = 0;
+                drawing = true;
+                animate();
+            }
+            
+            // 重新开始按钮
+            restartBtn.addEventListener('click', function() {
+                if (!drawing) {
+                    startDrawing();
+                }
+            });
+            
+            // 更换图案按钮
+            changePatternBtn.addEventListener('click', function() {
+                if (!drawing) {
+                    currentPattern = (currentPattern + 1) % patterns.length;
+                    pathSegments = patterns[currentPattern];
+                    startDrawing();
+                }
+            });
+            
+            // 初始化
+            setTimeout(startDrawing, 1000);
+        });
+    </script>
+</body>
+</html>

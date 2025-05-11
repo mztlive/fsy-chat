@@ -94,9 +94,8 @@ export default function GeneratedVideoSet(props: GeneratedVideoSet) {
 
             {/* 空状态 */}
             <Show when={!props.loading && props.videos.length === 0}>
-                <div class="flex flex-col items-center justify-center py-16 text-base-content opacity-60">
-                    <VideoIcon class="h-16 w-16 mb-4" />
-                    <p class="text-lg font-medium">暂无视频内容</p>
+                <div class="flex flex-col items-center justify-center  text-base-content opacity-60">
+                    <img src="/images/video_gen2.png" alt="empty-state" class="w-60 mb-4" />
                     <p class="text-sm mt-2">请输入提示词生成新的视频</p>
                 </div>
             </Show>

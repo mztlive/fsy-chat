@@ -23,19 +23,19 @@ const ChatHeader = (props: ChatHeaderProps) => {
             </button>
 
             {/* 标题 */}
-            <h1 class="text-xl font-medium">Fsy-Chat</h1>
+            <h1 class="text-xl font-medium">Fsy AI Assistant</h1>
 
             <div class="flex-1"></div>
 
             {/* 刷新按钮 */}
-            <button
+            {/* <button
                 class="btn btn-sm btn-square btn-ghost"
                 onClick={() => {
                     window.location.reload()
                 }}
             >
                 <RefreshIcon />
-            </button>
+            </button> */}
         </header>
     )
 }
@@ -83,7 +83,7 @@ interface ChatContentProps {
 // 主内容区域组件
 const ChatContent = (props: ChatContentProps) => {
     return (
-        <div class="grid grid-rows-[auto_1fr_auto] h-screen overflow-hidden">
+        <div class="bg-base-100 grid grid-rows-[auto_1fr_auto] h-screen overflow-hidden">
             <ChatHeader onToggleSidebar={props.onToggleSidebar} />
 
             {/* 聊天窗口 */}
