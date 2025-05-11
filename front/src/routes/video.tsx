@@ -1,52 +1,54 @@
 import { createFileRoute } from '@tanstack/solid-router'
-import { createSignal, Show } from 'solid-js'
+import { createSignal, Show, For } from 'solid-js'
 import { PromptInput, AspectRatio, AspectRatioSelector } from '../components/image'
 import ErrorAlert from '~/components/common/ErrorAlert'
-import { Portal } from 'solid-js/web'
-import { useVideoGenerate } from '~/hooks/video_generate'
 import GeneratedVideoSet from '~/components/image/GeneratedVideoSet'
+import { useVideoGenerate } from '~/hooks/video_generate'
+import { PencilIcon } from '~/components/icons'
 
 export const Route = createFileRoute('/video')({
-    component: ImageRoute,
+    component: VideoRoute,
 })
 
-function ImageRoute() {
+function VideoRoute() {
     const aspectRatios: AspectRatio[] = [
         {
             id: '1280x720',
-            label: '1280x720',
+            label: '16:9',
             ratio: '16:9',
             width: 1280,
             height: 720,
         },
-        { id: '960x960', label: '960x960', ratio: '1:1', width: 960, height: 960 },
+        { id: '960x960', label: '1:1', ratio: '1:1', width: 960, height: 960 },
         {
             id: '720x1280',
-            label: '720x1280',
+            label: '9:16',
             ratio: '9:16',
             width: 720,
             height: 1280,
         },
         {
             id: '1088x832',
-            label: '1088x832',
+            label: '4:3',
             ratio: '4:3',
             width: 1088,
             height: 832,
         },
         {
             id: '832x1088',
-            label: '832x1088',
+            label: '3:4',
             ratio: '3:4',
             width: 832,
             height: 1088,
         },
-        { id: '832x480', label: '832x480', ratio: '16:9', width: 832, height: 480 },
-        { id: '624x624', label: '624x624', ratio: '1:1', width: 624, height: 624 },
-        { id: '480x832', label: '480x832', ratio: '9:16', width: 480, height: 832 },
     ]
 
-    const [ratio, setRatio] = createSignal<AspectRatio>(aspectRatios[0])
+    const [ratio, setRatio] = createSignal<AspectRatio>(
+        aspectRatios.find(r => r.id === '16:9') || aspectRatios[0]
+    )
+    const [prompt, setPrompt] = createSignal('')
+
+    const [isSmartRewrite, setIsSmartRewrite] = createSignal(false)
 
     const { generatedVideos, createVideo, error, isPending } = useVideoGenerate()
 
@@ -56,41 +58,89 @@ function ImageRoute() {
         // 实际选择处理...
     }
 
-    // 生成图片
-    const handleGenerate = async (prompt: string) => {
-        await createVideo(prompt, ratio().width, ratio().height)
+    // 生成视频
+    const handleGenerate = async () => {
+        if (!prompt().trim()) {
+            console.warn('Prompt is empty, generation skipped.')
+            return
+        }
+        await createVideo(prompt(), ratio().width, ratio().height, isSmartRewrite())
     }
 
-    return (
-        <div class="min-h-screen bg-gray-50">
-            <div class="max-w-5xl mx-auto px-4 py-8">
-                {/* 主内容区 */}
-                {/* 生成的图片展示 */}
-                <div class="p-6 pb-32">
-                    <GeneratedVideoSet
-                        videos={generatedVideos()}
-                        onVideoSelect={handleVideoSelect}
-                        loading={isPending()}
-                    />
+    const LeftPanel = () => (
+        <div class="w-[360px] flex-shrink-0 bg-white p-6 flex flex-col space-y-4 h-full overflow-y-auto rounded-lg">
+            <h1 class="text-xl font-semibold text-gray-800">文字生成视频</h1>
+
+            <div class="form-control">
+                <textarea
+                    class="textarea w-full h-32 resize-none text-sm leading-relaxed focus:outline-none"
+                    placeholder="输入视频描述，例如：一只可爱的猫咪在草地上奔跑"
+                    value={prompt()}
+                    onInput={e => setPrompt(e.currentTarget.value)}
+                />
+                <div class="flex justify-end mt-2">
+                    <div class="text-xs text-gray-400">{prompt().length}/800</div>
                 </div>
-
-                {/* 创作区域 - 通过Portal固定在底部 */}
-                <Portal>
-                    <div class="fixed bottom-4 left-0 right-0 p-6 z-10">
-                        <PromptInput onGenerate={handleGenerate} loading={isPending()}>
-                            <AspectRatioSelector
-                                aspectRatios={aspectRatios}
-                                onRatioSelect={setRatio}
-                                selectedRatio={ratio()}
-                            />
-                        </PromptInput>
-
-                        <Show when={error()}>
-                            <ErrorAlert message={error()?.message} />
-                        </Show>
-                    </div>
-                </Portal>
             </div>
+
+            <div class="space-y-2">
+                <label class="text-sm font-medium text-gray-800">比例</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <For each={aspectRatios}>
+                        {ar => (
+                            <button
+                                class={`btn btn-sm normal-case border-none font-medium ${ratio().id === ar.id ? 'btn-active bg-blue-100 text-blue-600 hover:bg-blue-200' : 'bg-gray-50 hover:bg-gray-100 text-gray-700'}`}
+                                onClick={() => setRatio(ar)}
+                            >
+                                {ar.label}
+                            </button>
+                        )}
+                    </For>
+                </div>
+            </div>
+
+            <div class="space-y-4 flex flex-col gap-2">
+                <span class="text-sm font-medium text-gray-800">AI增强</span>
+                <button
+                    class={`btn border-none btn-sm normal-case font-medium ${isSmartRewrite() ? 'btn-active bg-blue-100 text-blue-600 hover:bg-blue-200' : 'btn-ghost bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
+                    onClick={() => setIsSmartRewrite(!isSmartRewrite())}
+                >
+                    <PencilIcon class="w-4 h-4" />
+                    智能扩写
+                </button>
+            </div>
+
+            <div class="flex-grow"></div>
+
+            <button
+                class="btn btn-primary btn-md w-full normal-case text-base font-medium"
+                onClick={handleGenerate}
+                disabled={isPending() || !prompt().trim()}
+            >
+                {isPending() ? <span class="loading loading-spinner loading-sm"></span> : null}
+                生成视频
+            </button>
+        </div>
+    )
+
+    const RightPanel = () => (
+        <div class="flex-1 p-6 bg-white overflow-y-auto h-full rounded-lg ml-4">
+            <GeneratedVideoSet
+                videos={generatedVideos()}
+                onVideoSelect={handleVideoSelect}
+                loading={isPending()}
+            />
+
+            <Show when={error()}>
+                <ErrorAlert message={error()?.message} />
+            </Show>
+        </div>
+    )
+
+    return (
+        <div class="flex h-screen max-h-screen overflow-hidden bg-gray-50 p-6">
+            <LeftPanel />
+            <RightPanel />
         </div>
     )
 }

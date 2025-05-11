@@ -1,16 +1,11 @@
 import { useMutation } from '@tanstack/solid-query'
 import { createMemo } from 'solid-js'
-import { GeneratedImage } from '~/api'
+import { GeneratedImage, ImageGenerationRequest } from '~/api/types'
 import { imageGeneration } from '~/api/image'
 
 export const useImageGenerate = () => {
     const generate = useMutation(() => ({
-        mutationFn: (params: {
-            prompt: string
-            width: number
-            height: number
-            isSmartRewrite: boolean
-        }) => imageGeneration(params.prompt, params.width, params.height, params.isSmartRewrite),
+        mutationFn: (params: ImageGenerationRequest) => imageGeneration(params),
         initialData: {
             data: {
                 urls: [],
@@ -22,17 +17,12 @@ export const useImageGenerate = () => {
         },
     }))
 
-    const createImage = (
-        prompt: string,
-        width: number,
-        height: number,
-        isSmartRewrite: boolean
-    ) => {
-        if (!prompt.trim()) {
+    const createImage = (request: ImageGenerationRequest) => {
+        if (!request.prompt) {
             return
         }
 
-        return generate.mutateAsync({ prompt, width, height, isSmartRewrite })
+        return generate.mutateAsync(request)
     }
 
     const generatedImages = createMemo((prev: GeneratedImage[]) => {

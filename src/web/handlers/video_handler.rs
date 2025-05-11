@@ -16,6 +16,7 @@ pub struct VideoGenerationRequest {
     pub prompt: String,
     pub width: u32,
     pub height: u32,
+    pub is_smart_rewrite: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -31,7 +32,12 @@ pub async fn video_generation(
 ) -> ApiResult<GeneratedVideo> {
     let task_id = app_state
         .kernel()
-        .video_generation_task(&request.prompt, request.width, request.height)
+        .video_generation_task(
+            &request.prompt,
+            request.width,
+            request.height,
+            request.is_smart_rewrite,
+        )
         .await?;
 
     let response = wait_generation_task::<Text2VideoTaskQueryOutput, Text2VideoTaskUsage>(

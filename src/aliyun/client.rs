@@ -1,5 +1,6 @@
 use rig::{Embed, embeddings};
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde_json::json;
 
 use crate::aliyun::scheme::AsyncImageGenerationResponse;
 
@@ -217,6 +218,8 @@ impl Client {
             .json(&request)
             .send()
             .await?;
+
+        tracing::info!("阿里云Generate任务请求: {:?}", json!(request));
 
         // 解析响应
         let body = response.text().await?;

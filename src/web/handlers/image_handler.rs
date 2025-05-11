@@ -17,6 +17,7 @@ pub struct ImageGenerationRequest {
     pub width: u32,
     pub height: u32,
     pub is_smart_rewrite: bool,
+    pub negative_prompt: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -62,6 +63,7 @@ pub async fn image_generation(
             request.width,
             request.height,
             request.is_smart_rewrite,
+            request.negative_prompt,
         )
         .await?;
 

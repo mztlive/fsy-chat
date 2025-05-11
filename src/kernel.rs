@@ -260,6 +260,7 @@ impl Kernel {
         width: u32,
         height: u32,
         is_smart_rewrite: bool,
+        negative_prompt: Option<String>,
     ) -> AppResult<String> {
         let model = self
             .aliyun_client
@@ -271,6 +272,12 @@ impl Kernel {
 
         if is_smart_rewrite {
             additional_params["prompt_extend"] = json!(true);
+        }
+
+        if let Some(negative_prompt) = negative_prompt {
+            if !negative_prompt.is_empty() {
+                additional_params["negative_prompt"] = json!(negative_prompt);
+            }
         }
 
         let request = ImageGenerationRequest {
@@ -297,6 +304,7 @@ impl Kernel {
         prompt: &str,
         width: u32,
         height: u32,
+        is_smart_rewrite: bool,
     ) -> AppResult<String> {
         let model = self
             .aliyun_client
@@ -309,7 +317,7 @@ impl Kernel {
             parameters: Text2VideoParameters {
                 size: Some(format!("{}*{}", width, height)),
                 duration: Some(5),
-                prompt_extend: Some(true),
+                prompt_extend: Some(is_smart_rewrite),
                 seed: None,
             },
         };
