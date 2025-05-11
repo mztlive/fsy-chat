@@ -20,12 +20,6 @@ function ImageRoute() {
         { id: '3:4', label: '3:4', ratio: '3:4', width: 1080, height: 1440 },
     ]
 
-    // const [isSmartRewrite, setIsSmartRewrite] = createSignal(false)
-    // const [ratio, setRatio] = createSignal<AspectRatio>(
-    //     availableAspectRatios.find(r => r.id === '9:16') || availableAspectRatios[0]
-    // )
-    // const [prompt, setPrompt] = createSignal('一个粉红色的橡皮擦，椭圆形的，上面是小猪的头，长鼻子')
-
     const [form, setForm] = createStore({
         prompt: '',
         ratio: availableAspectRatios[0],
@@ -42,11 +36,6 @@ function ImageRoute() {
     }))
 
     const { generatedImages, createImage, error, isPending } = useImageGenerate()
-
-    const handleImageSelect = (imageId: string) => {
-        console.log('选择图片:', imageId)
-        // 实际选择处理...
-    }
 
     const handleGenerate = async () => {
         if (!request().prompt.trim()) {
@@ -89,7 +78,20 @@ function ImageRoute() {
                     <For each={availableAspectRatios}>
                         {ar => (
                             <button
-                                class={`btn btn-sm normal-case border-none font-medium ${form.ratio.id === ar.id ? 'btn-active bg-blue-100 text-blue-600 hover:bg-blue-200' : 'bg-gray-50 hover:bg-gray-100 text-gray-700'}`}
+                                classList={{
+                                    btn: true,
+                                    'btn-sm': true,
+                                    'normal-case': true,
+                                    'border-none': true,
+                                    'font-medium': true,
+                                    'btn-active': form.ratio.id === ar.id,
+                                    'bg-blue-100': form.ratio.id === ar.id,
+                                    'text-blue-600': form.ratio.id === ar.id,
+                                    'hover:bg-blue-200': form.ratio.id === ar.id,
+                                    'bg-gray-50': form.ratio.id !== ar.id,
+                                    'hover:bg-gray-100': form.ratio.id !== ar.id,
+                                    'text-gray-700': form.ratio.id !== ar.id,
+                                }}
                                 onClick={() => setForm('ratio', ar)}
                             >
                                 {ar.label}
@@ -127,7 +129,6 @@ function ImageRoute() {
         <div class="flex-1 p-6 bg-white  overflow-y-auto h-full rounded-lg ml-4">
             <GeneratedImages
                 images={generatedImages()}
-                onImageSelect={handleImageSelect}
                 loading={isPending()}
                 aspectRatio={form.ratio}
             />

@@ -6,7 +6,7 @@ import GeneratedImageComponent from './GeneratedImage'
 
 export interface GeneratedImageSetProps {
     images: GeneratedImage[]
-    onImageSelect: (imageId: string) => void
+    onImageSelect?: (imageId: string) => void
     loading: boolean
     aspectRatio: AspectRatio
 }
