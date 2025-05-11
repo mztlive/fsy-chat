@@ -5,8 +5,12 @@ import { imageGeneration } from '~/api/image'
 
 export const useImageGenerate = () => {
     const generate = useMutation(() => ({
-        mutationFn: (params: { prompt: string; width: number; height: number }) =>
-            imageGeneration(params.prompt, params.width, params.height),
+        mutationFn: (params: {
+            prompt: string
+            width: number
+            height: number
+            isSmartRewrite: boolean
+        }) => imageGeneration(params.prompt, params.width, params.height, params.isSmartRewrite),
         initialData: {
             data: {
                 urls: [],
@@ -18,12 +22,17 @@ export const useImageGenerate = () => {
         },
     }))
 
-    const createImage = (prompt: string, width: number, height: number) => {
+    const createImage = (
+        prompt: string,
+        width: number,
+        height: number,
+        isSmartRewrite: boolean
+    ) => {
         if (!prompt.trim()) {
             return
         }
 
-        return generate.mutateAsync({ prompt, width, height })
+        return generate.mutateAsync({ prompt, width, height, isSmartRewrite })
     }
 
     const generatedImages = createMemo((prev: GeneratedImage[]) => {

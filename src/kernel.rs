@@ -4,6 +4,7 @@ use rig::{
     providers::openai::{self, Client as OpenAiClient},
 };
 use serde::de::DeserializeOwned;
+use serde_json::json;
 
 use crate::{
     aliyun::{
@@ -258,16 +259,25 @@ impl Kernel {
         prompt: &str,
         width: u32,
         height: u32,
+        is_smart_rewrite: bool,
     ) -> AppResult<String> {
         let model = self
             .aliyun_client
             .image_generation_model(&self.config.image.model);
 
+        let mut additional_params = json!({
+            "prompt_extend": false,
+        });
+
+        if is_smart_rewrite {
+            additional_params["prompt_extend"] = json!(true);
+        }
+
         let request = ImageGenerationRequest {
             prompt: prompt.to_string(),
             width,
             height,
-            additional_params: None,
+            additional_params: Some(additional_params),
         };
 
         let response = model.image_generation(request).await?;

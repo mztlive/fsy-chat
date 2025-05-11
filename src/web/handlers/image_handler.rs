@@ -16,6 +16,7 @@ pub struct ImageGenerationRequest {
     pub prompt: String,
     pub width: u32,
     pub height: u32,
+    pub is_smart_rewrite: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -56,7 +57,12 @@ pub async fn image_generation(
 ) -> ApiResult<GeneratedImage> {
     let task_id = app_state
         .kernel()
-        .image_generation_task(&request.prompt, request.width, request.height)
+        .image_generation_task(
+            &request.prompt,
+            request.width,
+            request.height,
+            request.is_smart_rewrite,
+        )
         .await?;
 
     let response = wait_generation_task::<ImageTaskQueryOutput, Text2ImageTaskUsage>(
