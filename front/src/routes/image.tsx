@@ -1,28 +1,21 @@
 import { createFileRoute } from '@tanstack/solid-router'
-import { createSignal, Show, For, createMemo, Switch } from 'solid-js'
-import { GeneratedImages, AspectRatio, EmptyState } from '../components/image'
+import { Show, For, createMemo } from 'solid-js'
+import { GeneratedImages, AspectRatio } from '../components/image'
 import ErrorAlert from '~/components/common/ErrorAlert'
 import { useImageGenerate } from '~/hooks/image_generate'
-import { ImageGenerationRequest } from '~/api/types'
 import { createStore } from 'solid-js/store'
 import { PencilIcon } from '~/components/icons'
+import { ImageAspectRatios } from '~/components/image/AspectRatioSelector'
+import SelectBtn from '~/components/common/SelectBtn'
 
 export const Route = createFileRoute('/image')({
     component: ImageRoute,
 })
 
 function ImageRoute() {
-    const availableAspectRatios: AspectRatio[] = [
-        { id: '1:1', label: '1:1', ratio: '1:1', width: 1024, height: 1024 },
-        { id: '16:9', label: '16:9', ratio: '16:9', width: 1440, height: 810 },
-        { id: '9:16', label: '9:16', ratio: '9:16', width: 810, height: 1440 },
-        { id: '4:3', label: '4:3', ratio: '4:3', width: 1440, height: 1080 },
-        { id: '3:4', label: '3:4', ratio: '3:4', width: 1080, height: 1440 },
-    ]
-
     const [form, setForm] = createStore({
         prompt: '',
-        ratio: availableAspectRatios[0],
+        ratio: ImageAspectRatios[0],
         is_smart_rewrite: false,
         negative_prompt: '',
     })
@@ -53,7 +46,7 @@ function ImageRoute() {
                 <div class="space-y-4">
                     <span class="text-sm font-medium text-gray-800">画面描述</span>
                     <textarea
-                        class="textarea w-full h-32 resize-none text-sm leading-relaxed focus:outline-none"
+                        class="textarea w-full h-32 resize-none text-sm  focus:outline-none"
                         placeholder="输入画面描述，例如：一只可爱的猫咪，水彩画风格"
                         value={form.prompt}
                         onInput={e => setForm('prompt', e.currentTarget.value)}
@@ -64,8 +57,8 @@ function ImageRoute() {
                 <div class="space-y-4">
                     <span class="text-sm font-medium text-gray-800">禁止内容</span>
                     <textarea
-                        class="textarea w-full h-32 resize-none text-sm leading-relaxed focus:outline-none"
-                        placeholder="输入禁止内容，例如：人物"
+                        class="textarea w-full h-32 resize-none text-sm  focus:outline-none"
+                        placeholder="输入禁止内容，例如：人物、动物、建筑"
                         value={form.negative_prompt}
                         onInput={e => setForm('negative_prompt', e.currentTarget.value)}
                     />
@@ -75,27 +68,14 @@ function ImageRoute() {
             <div class="space-y-2">
                 <label class="text-sm font-medium text-gray-800">比例</label>
                 <div class="grid grid-cols-3 gap-2">
-                    <For each={availableAspectRatios}>
+                    <For each={ImageAspectRatios}>
                         {ar => (
-                            <button
-                                classList={{
-                                    btn: true,
-                                    'btn-sm': true,
-                                    'normal-case': true,
-                                    'border-none': true,
-                                    'font-medium': true,
-                                    'btn-active': form.ratio.id === ar.id,
-                                    'bg-blue-100': form.ratio.id === ar.id,
-                                    'text-blue-600': form.ratio.id === ar.id,
-                                    'hover:bg-blue-200': form.ratio.id === ar.id,
-                                    'bg-gray-50': form.ratio.id !== ar.id,
-                                    'hover:bg-gray-100': form.ratio.id !== ar.id,
-                                    'text-gray-700': form.ratio.id !== ar.id,
-                                }}
-                                onClick={() => setForm('ratio', ar)}
+                            <SelectBtn
+                                isSelected={form.ratio.id === ar.id}
+                                onSelect={() => setForm('ratio', ar)}
                             >
                                 {ar.label}
-                            </button>
+                            </SelectBtn>
                         )}
                     </For>
                 </div>
@@ -103,23 +83,25 @@ function ImageRoute() {
 
             <div class="space-y-4 flex flex-col gap-2">
                 <span class="text-sm font-medium text-gray-800">AI增强</span>
-                <button
-                    class={`btn border-none btn-sm normal-case font-medium ${form.is_smart_rewrite ? 'btn-active bg-blue-100 text-blue-600 hover:bg-blue-200' : 'btn-ghost bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
-                    onClick={() => setForm('is_smart_rewrite', !form.is_smart_rewrite)}
+                <SelectBtn
+                    isSelected={form.is_smart_rewrite}
+                    onSelect={() => setForm('is_smart_rewrite', !form.is_smart_rewrite)}
                 >
                     <PencilIcon class="w-4 h-4" />
                     智能扩写
-                </button>
+                </SelectBtn>
             </div>
 
             <div class="flex-grow"></div>
 
             <button
-                class="btn btn-primary btn-md w-full normal-case text-base font-medium"
+                class="btn btn-primary btn-md w-full"
                 onClick={handleGenerate}
                 disabled={isPending() || !form.prompt.trim()}
             >
-                {isPending() ? <span class="loading loading-spinner loading-sm"></span> : null}
+                <Show when={isPending()}>
+                    <span class="loading loading-spinner loading-sm"></span>
+                </Show>
                 生成画作
             </button>
         </div>
@@ -132,9 +114,6 @@ function ImageRoute() {
                 loading={isPending()}
                 aspectRatio={form.ratio}
             />
-            <Show when={!isPending() && generatedImages().length === 0}>
-                <EmptyState />
-            </Show>
             <Show when={error()}>
                 <ErrorAlert message={error()?.message} />
             </Show>

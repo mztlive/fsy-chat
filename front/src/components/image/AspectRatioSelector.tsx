@@ -1,5 +1,4 @@
-import { For, createSignal, Show } from 'solid-js'
-import { UpIcon } from '../icons'
+import { ParentProps } from 'solid-js'
 
 export interface AspectRatio {
     id: string
@@ -9,78 +8,47 @@ export interface AspectRatio {
     height: number
 }
 
-export interface AspectRatioSelectorProps {
-    onRatioSelect: (ratio: AspectRatio) => void
-    aspectRatios: AspectRatio[]
-    selectedRatio: AspectRatio
+export interface AspectRatioItemProps extends ParentProps {
+    onSelect: () => void
+    isSelected: boolean
 }
 
-const AspectRatioSelector = (props: AspectRatioSelectorProps) => {
-    const [isOpen, setIsOpen] = createSignal(false)
+export const ImageAspectRatios: AspectRatio[] = [
+    { id: '1:1', label: '1:1', ratio: '1:1', width: 1024, height: 1024 },
+    { id: '16:9', label: '16:9', ratio: '16:9', width: 1440, height: 810 },
+    { id: '9:16', label: '9:16', ratio: '9:16', width: 810, height: 1440 },
+    { id: '4:3', label: '4:3', ratio: '4:3', width: 1440, height: 1080 },
+    { id: '3:4', label: '3:4', ratio: '3:4', width: 1080, height: 1440 },
+]
 
-    const toggleMenu = () => setIsOpen(!isOpen())
-
-    const handleSelect = (ratioId: string) => {
-        props.onRatioSelect(props.aspectRatios.find(ratio => ratio.id === ratioId)!)
-        setIsOpen(false)
-    }
-
-    return (
-        <div class="dropdown dropdown-top">
-            <button
-                class="btn btn-sm bg-white text-base-content border border-gray-200 hover:bg-gray-100 normal-case flex items-center gap-1"
-                onClick={toggleMenu}
-            >
-                <Show when={props.selectedRatio}>
-                    <div class="w-4 h-4 bg-gray-100 rounded-sm flex items-center justify-center">
-                        <div
-                            class="bg-gray-600"
-                            style={{
-                                width: props.selectedRatio.ratio.includes(':')
-                                    ? props.selectedRatio.ratio.split(':')[0] + 'px'
-                                    : '2px',
-                                height: props.selectedRatio.ratio.includes(':')
-                                    ? props.selectedRatio.ratio.split(':')[1] + 'px'
-                                    : '2px',
-                                'max-width': '80%',
-                                'max-height': '80%',
-                            }}
-                        ></div>
-                    </div>
-                    <span>{props.selectedRatio.label}</span>
-                </Show>
-                <UpIcon />
-            </button>
-
-            <Show when={isOpen()}>
-                <div class="dropdown-content z-10 menu p-1 shadow-lg bg-white rounded-md w-52 border border-gray-200 mb-1">
-                    <For each={props.aspectRatios}>
-                        {ratio => (
-                            <li>
-                                <button
-                                    class={`${props.selectedRatio.id === ratio.id ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'}`}
-                                    onClick={() => handleSelect(ratio.id)}
-                                >
-                                    <div class="w-4 h-4 bg-gray-100 rounded-sm flex items-center justify-center">
-                                        <div
-                                            class={`${props.selectedRatio.id === ratio.id ? 'bg-blue-700' : 'bg-gray-600'}`}
-                                            style={{
-                                                width: ratio.ratio.split(':')[0] + 'px',
-                                                height: ratio.ratio.split(':')[1] + 'px',
-                                                'max-width': '80%',
-                                                'max-height': '80%',
-                                            }}
-                                        ></div>
-                                    </div>
-                                    <span>{ratio.label}</span>
-                                </button>
-                            </li>
-                        )}
-                    </For>
-                </div>
-            </Show>
-        </div>
-    )
-}
-
-export default AspectRatioSelector
+export const VideoAspectRatios: AspectRatio[] = [
+    {
+        id: '1280x720',
+        label: '16:9',
+        ratio: '16:9',
+        width: 1280,
+        height: 720,
+    },
+    { id: '960x960', label: '1:1', ratio: '1:1', width: 960, height: 960 },
+    {
+        id: '720x1280',
+        label: '9:16',
+        ratio: '9:16',
+        width: 720,
+        height: 1280,
+    },
+    {
+        id: '1088x832',
+        label: '4:3',
+        ratio: '4:3',
+        width: 1088,
+        height: 832,
+    },
+    {
+        id: '832x1088',
+        label: '3:4',
+        ratio: '3:4',
+        width: 832,
+        height: 1088,
+    },
+]

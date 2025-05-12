@@ -1,6 +1,6 @@
 import { For, Show } from 'solid-js'
 import ImageSkelon from '../common/ImageSkelon'
-import { ImageActionButtons, AspectRatio } from '.'
+import { ImageActionButtons, AspectRatio, EmptyState } from '.'
 import { GeneratedImage } from '~/api/types'
 import GeneratedImageComponent from './GeneratedImage'
 
@@ -23,6 +23,10 @@ export default function GeneratedImageSet(props: GeneratedImageSetProps) {
                             <ImageSkelon aspectRatio={props.aspectRatio} />
                         ))}
                 </div>
+            </Show>
+
+            <Show when={props.images.length === 0}>
+                <EmptyState />
             </Show>
 
             {/* 显示现有图片 */}

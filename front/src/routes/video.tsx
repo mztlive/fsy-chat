@@ -1,51 +1,18 @@
 import { createFileRoute } from '@tanstack/solid-router'
 import { createSignal, Show, For } from 'solid-js'
-import { PromptInput, AspectRatio, AspectRatioSelector } from '../components/image'
+import { AspectRatio } from '../components/image'
 import ErrorAlert from '~/components/common/ErrorAlert'
 import GeneratedVideoSet from '~/components/image/GeneratedVideoSet'
 import { useVideoGenerate } from '~/hooks/video_generate'
 import { PencilIcon } from '~/components/icons'
+import { VideoAspectRatios } from '~/components/image/AspectRatioSelector'
 
 export const Route = createFileRoute('/video')({
     component: VideoRoute,
 })
 
 function VideoRoute() {
-    const aspectRatios: AspectRatio[] = [
-        {
-            id: '1280x720',
-            label: '16:9',
-            ratio: '16:9',
-            width: 1280,
-            height: 720,
-        },
-        { id: '960x960', label: '1:1', ratio: '1:1', width: 960, height: 960 },
-        {
-            id: '720x1280',
-            label: '9:16',
-            ratio: '9:16',
-            width: 720,
-            height: 1280,
-        },
-        {
-            id: '1088x832',
-            label: '4:3',
-            ratio: '4:3',
-            width: 1088,
-            height: 832,
-        },
-        {
-            id: '832x1088',
-            label: '3:4',
-            ratio: '3:4',
-            width: 832,
-            height: 1088,
-        },
-    ]
-
-    const [ratio, setRatio] = createSignal<AspectRatio>(
-        aspectRatios.find(r => r.id === '16:9') || aspectRatios[0]
-    )
+    const [ratio, setRatio] = createSignal<AspectRatio>(VideoAspectRatios[0])
     const [prompt, setPrompt] = createSignal('')
 
     const [isSmartRewrite, setIsSmartRewrite] = createSignal(false)
@@ -86,7 +53,7 @@ function VideoRoute() {
             <div class="space-y-2">
                 <label class="text-sm font-medium text-gray-800">比例</label>
                 <div class="grid grid-cols-3 gap-2">
-                    <For each={aspectRatios}>
+                    <For each={VideoAspectRatios}>
                         {ar => (
                             <button
                                 class={`btn btn-sm normal-case border-none font-medium ${ratio().id === ar.id ? 'btn-active bg-blue-100 text-blue-600 hover:bg-blue-200' : 'bg-gray-50 hover:bg-gray-100 text-gray-700'}`}
